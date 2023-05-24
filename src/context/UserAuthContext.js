@@ -7,10 +7,12 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import React from 'react';
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"; 
 
 const userAuthContext = createContext();
+const userCollection = collection(db, "users");
 
 export function UserAuthContextProvider({ children }) {
   const [user, setUser] = useState({});
@@ -18,7 +20,12 @@ export function UserAuthContextProvider({ children }) {
   function logIn(email, password) {
     return signInWithEmailAndPassword(auth, email, password);
   }
-  function signUp(email, password) {
+  async function signUp(email, password) {
+    const data = {
+      UserEmail: email,
+      UserPassword: password
+    }
+    await addDoc(userCollection, data);
     return createUserWithEmailAndPassword(auth, email, password);
   }
   function logOut() {
@@ -41,9 +48,7 @@ export function UserAuthContextProvider({ children }) {
   }, []);
 
   return (
-    <userAuthContext.Provider
-      value={{ user, logIn, signUp, logOut, googleSignIn }}
-    >
+    <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn }}>
       {children}
     </userAuthContext.Provider>
   );
@@ -52,3 +57,11 @@ export function UserAuthContextProvider({ children }) {
 export function useUserAuth() {
   return useContext(userAuthContext);
 }
+
+class AddUserService {
+  addUser = (newUser) => {
+    return addDoc(userCollection, newUser);
+  }
+}
+
+export default new AddUserService();
