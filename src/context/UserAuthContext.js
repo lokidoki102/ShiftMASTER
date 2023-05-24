@@ -29,11 +29,21 @@ export function UserAuthContextProvider({ children }) {
     return createUserWithEmailAndPassword(auth, email, password);
   }
   function logOut() {
-    return signOut(auth);
+    signOut(auth).then((result) => {
+        console.log(result);
+        console.log("Entered Sign Out");
+    }).catch((e) => { console.log(e) })
   }
   function googleSignIn() {
     const googleAuthProvider = new GoogleAuthProvider();
-    return signInWithPopup(auth, googleAuthProvider);
+    return signInWithPopup(auth, googleAuthProvider).then((result) => {
+        const user = result.user;
+        const data = {
+            UserEmail: user.email,
+            UserPassword: "Password in Google"
+          }
+          addDoc(userCollection, data);
+    });
   }
 
   useEffect(() => {
@@ -57,11 +67,3 @@ export function UserAuthContextProvider({ children }) {
 export function useUserAuth() {
   return useContext(userAuthContext);
 }
-
-class AddUserService {
-  addUser = (newUser) => {
-    return addDoc(userCollection, newUser);
-  }
-}
-
-export default new AddUserService();
