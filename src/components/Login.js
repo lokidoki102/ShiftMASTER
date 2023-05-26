@@ -26,7 +26,7 @@ const Login = () => {
   const handleGoogleSignIn = async (e) => {
     e.preventDefault();
     try {
-      googleSignIn();
+      await googleSignIn();
       navigate("/home");
     } catch (error) {
       console.log(error.message);
