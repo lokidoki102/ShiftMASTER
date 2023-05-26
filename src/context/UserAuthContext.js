@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore"; 
+import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, collectionGroup, query, where } from "firebase/firestore"; 
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -20,13 +20,16 @@ export function UserAuthContextProvider({ children }) {
   function logIn(email, password) {
     return signInWithEmailAndPassword(auth, email, password);
   }
-  async function signUp(email, password) {
-    const data = {
-      UserEmail: email,
-      UserPassword: password
-    }
-    await addDoc(userCollection, data);
-    return createUserWithEmailAndPassword(auth, email, password);
+  function signUp(email, password) {
+    return createUserWithEmailAndPassword(auth, email, password).then((result) => {
+        const user = result.user;
+        const data = {
+            UserID: user.uid,
+            UserEmail: email,
+            UserPassword: password
+        }
+        addDoc(userCollection, data);
+    });
   }
   function logOut() {
     signOut(auth).then((result) => {
@@ -37,10 +40,17 @@ export function UserAuthContextProvider({ children }) {
   function googleSignIn() {
     const googleAuthProvider = new GoogleAuthProvider();
     return signInWithPopup(auth, googleAuthProvider).then((result) => {
+        
+        /*const allUsers = query(collectionGroup(db, "users"));
+        getDocs(allUsers).forEach((doc) => {
+            console.log(doc.data());
+        })*/
+
         const user = result.user;
         const data = {
+            UserID: user.uid,
             UserEmail: user.email,
-            UserPassword: "Password in Google"
+            UserPassword: ""
           }
           addDoc(userCollection, data);
     });
@@ -51,7 +61,6 @@ export function UserAuthContextProvider({ children }) {
       console.log("Auth", currentuser);
       setUser(currentuser);
     });
-
     return () => {
       unsubscribe();
     };
