@@ -25,11 +25,16 @@ const Signup = () => {
   return (
     <>
       <div className="p-4 box">
-        <h2 className="mb-3">Firebase Auth Signup</h2>
+        {/* <h2 className="mb-3">Signup</h2> */}
+        <div className="mb-3 logo-placeholder">
+            <h2 className="inline bolded logo-white">Shift</h2>
+            <h2 className="inline bolded logo-black">MASTER</h2>
+            </div>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Control
+            className="login-box"
               type="email"
               placeholder="Email address"
               onChange={(e) => setEmail(e.target.value)}
@@ -38,6 +43,7 @@ const Signup = () => {
 
           <Form.Group className="mb-3" controlId="formBasicPassword">
             <Form.Control
+            className="login-box"
               type="password"
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
@@ -50,10 +56,11 @@ const Signup = () => {
             </Button>
           </div>
         </Form>
+        <div className="mt-3 text-center sign-up-button primary-text">
+        Already have an account? <Link to="/" className="custom-link">Log In</Link>
       </div>
-      <div className="p-4 box mt-3 text-center">
-        Already have an account? <Link to="/">Log In</Link>
       </div>
+
     </>
   );
 };
