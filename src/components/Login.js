@@ -36,13 +36,16 @@ const Login = () => {
   return (
     <>
       <div className="p-4 box">
-        <h2 className="mb-3">ShiftMaster Login</h2>
+        <div className="mb-3 logo-placeholder">
+            <h2 className="inline bolded logo-white">Shift</h2>
+            <h2 className="inline bolded logo-black">MASTER</h2>
+            </div>
         {error && <Alert variant="danger">{error}</Alert>}
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Control
               type="email"
-              placeholder="Email address"
+              placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
             />
           </Form.Group>
@@ -57,7 +60,7 @@ const Login = () => {
 
           <div className="d-grid gap-2">
             <Button variant="primary" type="Submit">
-              Log In
+              Log in
             </Button>
           </div>
         </Form>
