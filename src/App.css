@@ -13,6 +13,7 @@ body {
 .box {
   border: 1px solid #dfdfdf;
   background-color: #fff;
+  border-radius: 10px;
 }
 
 .g-btn {
@@ -75,7 +76,6 @@ body {
 
 .custom-google-button {
     background-color: #fff !important;
-    color: #242424 !important;
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
@@ -93,4 +93,12 @@ body {
 .sign-up-button {
     padding-top: 10px;
     font-size: smaller !important;
+}
+
+.custom-link {
+    text-decoration: none;
+}
+
+.primary-text {
+    color: #242424 !important;
 }

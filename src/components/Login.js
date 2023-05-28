@@ -69,13 +69,13 @@ const Login = () => {
         <hr />
         <div>
           <GoogleButton
-            className="g-btn custom-google-button login-box"
+            className="g-btn custom-google-button login-box primary-text"
             type="dark"
             onClick={handleGoogleSignIn}
           />
         </div>
-        <div className="mt-3 text-center sign-up-button">
-        Don't have an account? <Link to="/signup">Sign up</Link>
+        <div className="mt-3 text-center sign-up-button primary-text">
+        Don't have an account? <Link to="/signup" className="custom-link">Sign up</Link>
       </div>
       </div>
       
