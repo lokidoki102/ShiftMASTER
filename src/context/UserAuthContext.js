@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc, collectionGroup, query, where } from "firebase/firestore"; 
+import { collection, getDocs, addDoc } from "firebase/firestore"; 
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -39,20 +39,28 @@ export function UserAuthContextProvider({ children }) {
   }
   function googleSignIn() {
     const googleAuthProvider = new GoogleAuthProvider();
-    return signInWithPopup(auth, googleAuthProvider).then((result) => {
-        
-        /*const allUsers = query(collectionGroup(db, "users"));
-        getDocs(allUsers).forEach((doc) => {
-            console.log(doc.data());
-        })*/
-
+    return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
         const user = result.user;
-        const data = {
-            UserID: user.uid,
-            UserEmail: user.email,
-            UserPassword: ""
-          }
-          addDoc(userCollection, data);
+        // This method is to check whether the Google Email exist within ShiftMaster FireBase
+        getDocs(userCollection).then((snapshot) => {
+            let allUsers = [];
+            snapshot.docs.forEach((doc) => {
+                allUsers.push({ ...doc.data()})
+            })
+            for (var i = 0; i < allUsers.length; i++){
+                console.log(allUsers[i].UserID);
+                console.log(user.uid)
+                if (allUsers[i].UserID === user.uid){
+                    return;
+                }
+            }
+            const data = {
+                UserID: user.uid,
+                UserEmail: user.email,
+                UserPassword: ""
+              }
+              addDoc(userCollection, data);
+        })
     });
   }
 
