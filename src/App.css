@@ -89,3 +89,8 @@ body {
     border-radius: 5px !important;
     font-size: smaller !important;
 }
+
+.sign-up-button {
+    padding-top: 10px;
+    font-size: smaller !important;
+}

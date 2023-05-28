@@ -74,10 +74,11 @@ const Login = () => {
             onClick={handleGoogleSignIn}
           />
         </div>
-      </div>
-      <div className="p-4 box mt-3 text-center">
+        <div className="mt-3 text-center sign-up-button">
         Don't have an account? <Link to="/signup">Sign up</Link>
       </div>
+      </div>
+      
     </>
   );
 };
