@@ -54,6 +54,7 @@ body {
     font-family: 'Raleway', sans-serif !important;
     background-color: #242424 !important;
     border-color: #242424 !important;
+    border-radius: 5px !important;
 }
 
 .logo-white {
@@ -70,4 +71,21 @@ body {
     background-color: #fff;
     border-color: #242424;
     border: 20px;
+}
+
+.custom-google-button {
+    background-color: #fff !important;
+    color: #242424 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    box-shadow: none !important;
+    padding: 20px !important;
+
+}
+
+.login-box {
+    border: 3px solid #242424 !important;
+    border-radius: 5px !important;
+    font-size: smaller !important;
 }

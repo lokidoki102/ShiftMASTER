@@ -44,14 +44,16 @@ const Login = () => {
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3" controlId="formBasicEmail">
             <Form.Control
+            className="login-box"
               type="email"
               placeholder="Email"
               onChange={(e) => setEmail(e.target.value)}
             />
           </Form.Group>
 
-          <Form.Group className="mb-3" controlId="formBasicPassword">
+          <Form.Group className="mb-3 " controlId="formBasicPassword">
             <Form.Control
+            className="login-box"
               type="password"
               placeholder="Password"
               onChange={(e) => setPassword(e.target.value)}
@@ -67,7 +69,7 @@ const Login = () => {
         <hr />
         <div>
           <GoogleButton
-            className="g-btn"
+            className="g-btn custom-google-button login-box"
             type="dark"
             onClick={handleGoogleSignIn}
           />
