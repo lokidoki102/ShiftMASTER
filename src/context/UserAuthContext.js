@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc } from "firebase/firestore"; 
+import { collection, getDocs, addDoc } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
