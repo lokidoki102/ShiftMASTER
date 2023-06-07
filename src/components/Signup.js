@@ -11,7 +11,6 @@ const Signup = () => {
     const [name, setName] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [companyName, setCompanyName] = useState("");
-    const [role, setRoles] = useState("");
     
     const { signUp } = useUserAuth();
     let navigate = useNavigate();
@@ -20,7 +19,7 @@ const Signup = () => {
         e.preventDefault();
         setError("");
         try {
-            await signUp(email, password, name, phoneNumber, companyName, role);
+            await signUp(email, password, name, phoneNumber, companyName);
             navigate("/");
         } catch (err) {
             setError(err.message);
@@ -101,14 +100,6 @@ const Signup = () => {
                                     />
                                 </Form.Group>
 
-                                <Form.Group className="mb-3" controldId="formBasicRoles">
-                                    <Form.Control
-                                        className="login-box"
-                                        type="hidden"
-                                        value="Employee"
-                                    />
-                                </Form.Group>
-
                                 <div className="d-grid gap-2">
                                     <Button variant="primary" type="Submit">
                                         Sign up
@@ -177,15 +168,6 @@ const Signup = () => {
                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                         pattern="[0-9]{4}-[0-9]{4}"
                                         required
-                                    />
-                                </Form.Group>
-
-                                <Form.Group className="mb-3" controldId="formBasicRoles">
-                                    <Form.Control
-                                        className="login-box"
-                                        type="hidden"
-                                        value="Manager"
-                                        onChange={(e) => setRoles(e.target.value)}
                                     />
                                 </Form.Group>
 

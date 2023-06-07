@@ -20,16 +20,36 @@ export function UserAuthContextProvider({ children }) {
     function logIn(email, password) {
         return signInWithEmailAndPassword(auth, email, password);
     }
-    function signUp(email, password, name, phoneNumber) {
-        return createUserWithEmailAndPassword(auth, email, password).then((result) => {
-            const user = result.user;
+    function assignRoles(userID, email, password, name, phoneNumber, companyName){
+        if (companyName === ""){
             const data = {
-                UserID: user.uid,
+                UserID: userID,
                 UserEmail: email,
                 UserPassword: password,
                 UserName: name,
-                UserPhoneNumber: phoneNumber
+                UserPhoneNumber: phoneNumber,
+                CompanyName: companyName,
+                Role: "Employee"
             }
+            return data;
+        } else {
+            const data = {
+                UserID: userID,
+                UserEmail: email,
+                UserPassword: password,
+                UserName: name,
+                UserPhoneNumber: phoneNumber,
+                CompanyName: companyName,
+                Role: "Manager"
+            }
+            return data;
+        }
+    }
+    function signUp(email, password, name, phoneNumber, companyName) {
+        return createUserWithEmailAndPassword(auth, email, password).then((result) => {
+            const user = result.user;
+            const userID = user.uid;
+            const data = assignRoles(userID, email, password, name, phoneNumber, companyName);
             addDoc(userCollection, data);
         });
     }
