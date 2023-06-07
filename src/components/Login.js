@@ -6,81 +6,81 @@ import GoogleButton from "react-google-button";
 import { useUserAuth } from "../context/UserAuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { logIn, googleSignIn } = useUserAuth();
-  const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const { logIn, googleSignIn } = useUserAuth();
+    const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await logIn(email, password);
-      navigate("/home");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        try {
+            await logIn(email, password);
+            navigate("/home");
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
-  const handleGoogleSignIn = async (e) => {
-    e.preventDefault();
-    try {
-      await googleSignIn();
-      navigate("/home");
-    } catch (error) {
-      console.log(error.message);
-    }
-  };
+    const handleGoogleSignIn = async (e) => {
+        e.preventDefault();
+        try {
+            await googleSignIn();
+            navigate("/home");
+        } catch (error) {
+            console.log(error.message);
+        }
+    };
 
-  return (
-    <>
-      <div className="p-4 box">
-        <div className="mb-3 logo-placeholder">
-            <h2 className="inline bolded logo-white">Shift</h2>
-            <h2 className="inline bolded logo-black">MASTER</h2>
+    return (
+        <>
+            <div className="p-4 box">
+                <div className="mb-3 logo-placeholder">
+                    <h2 className="inline bolded logo-white">Shift</h2>
+                    <h2 className="inline bolded logo-black">MASTER</h2>
+                </div>
+                {error && <Alert variant="danger">{error}</Alert>}
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group className="mb-3" controlId="formBasicEmail">
+                        <Form.Control
+                            className="login-box"
+                            type="email"
+                            placeholder="Email"
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3 " controlId="formBasicPassword">
+                        <Form.Control
+                            className="login-box"
+                            type="password"
+                            placeholder="Password"
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </Form.Group>
+
+                    <div className="d-grid gap-2">
+                        <Button variant="primary" type="Submit">
+                            Log in
+                        </Button>
+                    </div>
+                </Form>
+                <hr />
+                <div>
+                    <GoogleButton
+                        className="g-btn custom-google-button login-box primary-text"
+                        type="dark"
+                        onClick={handleGoogleSignIn}
+                    />
+                </div>
+                <div className="mt-3 text-center sign-up-button primary-text">
+                    Don't have an account? <Link to="/signup" className="custom-link">Sign up</Link>
+                </div>
             </div>
-        {error && <Alert variant="danger">{error}</Alert>}
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="formBasicEmail">
-            <Form.Control
-            className="login-box"
-              type="email"
-              placeholder="Email"
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Form.Group>
 
-          <Form.Group className="mb-3 " controlId="formBasicPassword">
-            <Form.Control
-            className="login-box"
-              type="password"
-              placeholder="Password"
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Form.Group>
-
-          <div className="d-grid gap-2">
-            <Button variant="primary" type="Submit">
-              Log in
-            </Button>
-          </div>
-        </Form>
-        <hr />
-        <div>
-          <GoogleButton
-            className="g-btn custom-google-button login-box primary-text"
-            type="dark"
-            onClick={handleGoogleSignIn}
-          />
-        </div>
-        <div className="mt-3 text-center sign-up-button primary-text">
-        Don't have an account? <Link to="/signup" className="custom-link">Sign up</Link>
-      </div>
-      </div>
-      
-    </>
-  );
+        </>
+    );
 };
 
 export default Login
