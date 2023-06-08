@@ -11,6 +11,7 @@ const Signup = () => {
     const [name, setName] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
     const [companyName, setCompanyName] = useState("");
+    const [uniqueCode, setUniqueCode] = useState("");
     
     const { signUp } = useUserAuth();
     let navigate = useNavigate();
@@ -19,7 +20,7 @@ const Signup = () => {
         e.preventDefault();
         setError("");
         try {
-            await signUp(email, password, name, phoneNumber, companyName);
+            await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
             navigate("/");
         } catch (err) {
             setError(err.message);
@@ -65,6 +66,17 @@ const Signup = () => {
                                         type="text"
                                         placeholder="Name"
                                         onChange={(e) => setName(e.target.value)}
+                                        required
+                                    />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3" controlId="formBasicUniqueCode">
+                                    <Form.Control
+                                        className="login-box"
+                                        type="text"
+                                        placeholder="Unique Code (e.g. Company-1234)"
+                                        onChange={(e) => setUniqueCode(e.target.value)}
+                                        pattern="^[A-Za-z]+-[0-9]{4}"
                                         required
                                     />
                                 </Form.Group>

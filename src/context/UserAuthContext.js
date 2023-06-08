@@ -20,8 +20,18 @@ export function UserAuthContextProvider({ children }) {
     function logIn(email, password) {
         return signInWithEmailAndPassword(auth, email, password);
     }
-    function assignRoles(userID, email, password, name, phoneNumber, companyName){
-        if (companyName === ""){
+    function companyCodeGenerator(companyName){
+        const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        const charactersLength = characters.length;
+        for ( let i = 0; i < 4; i++ ) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+        let companyCode = companyName.concat("-", result);
+        return companyCode;
+    }
+    function assignRoles(userID, email, password, name, phoneNumber, companyName, uniqueCode, companyCode){
+        if (uniqueCode === ""){
             const data = {
                 UserID: userID,
                 UserEmail: email,
@@ -29,7 +39,8 @@ export function UserAuthContextProvider({ children }) {
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
-                Role: "Employee"
+                CompanyCode: companyCode,
+                Role: "Manager"
             }
             return data;
         } else {
@@ -40,16 +51,18 @@ export function UserAuthContextProvider({ children }) {
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
-                Role: "Manager"
+                UniqueCode: uniqueCode,
+                Role: "Employee"
             }
             return data;
         }
     }
-    function signUp(email, password, name, phoneNumber, companyName) {
+    function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         return createUserWithEmailAndPassword(auth, email, password).then((result) => {
             const user = result.user;
             const userID = user.uid;
-            const data = assignRoles(userID, email, password, name, phoneNumber, companyName);
+            const companyCode = companyCodeGenerator(companyName);
+            const data = assignRoles(userID, email, password, name, phoneNumber, companyName, uniqueCode, companyCode);
             addDoc(userCollection, data);
         });
     }
