@@ -76,7 +76,6 @@ const Signup = () => {
                                         type="text"
                                         placeholder="Unique Code (e.g. Company-1234)"
                                         onChange={(e) => setUniqueCode(e.target.value)}
-                                        pattern="^[A-Za-z]+-[0-9]{4}"
                                         required
                                     />
                                 </Form.Group>

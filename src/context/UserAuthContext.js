@@ -13,14 +13,16 @@ import { collection, getDocs, addDoc } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
+const companyCodeCollection = collection(db, "companies");
 
 export function UserAuthContextProvider({ children }) {
     const [user, setUser] = useState({});
 
-    function logIn(email, password) {
-        return signInWithEmailAndPassword(auth, email, password);
-    }
     function companyCodeGenerator(companyName){
+        // Generate unique company codes upon signing up by the Manager and store company codes into companyCodeCollection
+        if(companyName === ""){
+            return;
+        }
         const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
         const charactersLength = characters.length;
@@ -28,43 +30,69 @@ export function UserAuthContextProvider({ children }) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         let companyCode = companyName.concat("-", result);
+        let companyData = {
+            Company: companyName,
+            CompanyCode: companyCode
+        }
+        addDoc(companyCodeCollection, companyData);
         return companyCode;
     }
-    function assignRoles(userID, email, password, name, phoneNumber, companyName, uniqueCode, companyCode){
+    function authenticateUserToCompany(uniqueCode){
+        // Get the Company Name from the Unique Code (in case some companies name are identical)
+        if(uniqueCode === ""){
+            return;
+        }
+        let finalName = "";
+        getDocs(companyCodeCollection).then((snapshot) => {
+            let companies = [];
+            snapshot.docs.forEach((doc) => {
+                companies.push({ ...doc.data() })
+            })
+            for (var i = 0; i < companies.length; i++){
+                if(companies[i].CompanyCode === uniqueCode){
+                    finalName = companies[i].Company;
+                }
+            }
+        })
+        return finalName;
+    }
+    function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
+        // Assign roles based on the role: Employee/Manager
+        let data = {};
         if (uniqueCode === ""){
-            const data = {
+            data = {
                 UserID: userID,
                 UserEmail: email,
-                UserPassword: password,
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
                 CompanyCode: companyCode,
                 Role: "Manager"
             }
-            return data;
         } else {
-            const data = {
+            data = {
                 UserID: userID,
                 UserEmail: email,
-                UserPassword: password,
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
-                UniqueCode: uniqueCode,
+                Status: "Not Approved",
                 Role: "Employee"
             }
-            return data;
         }
+        addDoc(userCollection, data);
     }
     function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         return createUserWithEmailAndPassword(auth, email, password).then((result) => {
             const user = result.user;
             const userID = user.uid;
             const companyCode = companyCodeGenerator(companyName);
-            const data = assignRoles(userID, email, password, name, phoneNumber, companyName, uniqueCode, companyCode);
-            addDoc(userCollection, data);
+            companyName = authenticateUserToCompany(uniqueCode);
+            assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode);
         });
+    }
+    function logIn(email, password) {
+        return signInWithEmailAndPassword(auth, email, password);
     }
     function logOut() {
         signOut(auth).then((result) => {
@@ -83,8 +111,6 @@ export function UserAuthContextProvider({ children }) {
                     allUsers.push({ ...doc.data() })
                 })
                 for (var i = 0; i < allUsers.length; i++) {
-                    console.log(allUsers[i].UserID);
-                    console.log(user.uid)
                     if (allUsers[i].UserID === user.uid) {
                         return;
                     }
@@ -92,7 +118,6 @@ export function UserAuthContextProvider({ children }) {
                 const data = {
                     UserID: user.uid,
                     UserEmail: user.email,
-                    UserPassword: ""
                 }
                 addDoc(userCollection, data);
             })
