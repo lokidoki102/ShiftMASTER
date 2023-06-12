@@ -37,24 +37,24 @@ export function UserAuthContextProvider({ children }) {
         addDoc(companyCodeCollection, companyData);
         return companyCode;
     }
-    function authenticateUserToCompany(uniqueCode){
+    async function authenticateUserToCompany(uniqueCode, companyName){
         // Get the Company Name from the Unique Code (in case some companies name are identical)
         if(uniqueCode === ""){
-            return;
+            return Promise.resolve(companyName);
         }
-        let finalName = "";
-        getDocs(companyCodeCollection).then((snapshot) => {
+        let finalCompanyName = "";
+        await getDocs(companyCodeCollection).then((snapshot) => {
             let companies = [];
             snapshot.docs.forEach((doc) => {
                 companies.push({ ...doc.data() })
             })
             for (var i = 0; i < companies.length; i++){
                 if(companies[i].CompanyCode === uniqueCode){
-                    finalName = companies[i].Company;
+                    finalCompanyName = companies[i].Company;
                 }
             }
         })
-        return finalName;
+        return Promise.resolve(finalCompanyName);
     }
     function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
         // Assign roles based on the role: Employee/Manager
@@ -80,27 +80,33 @@ export function UserAuthContextProvider({ children }) {
                 Role: "Employee"
             }
         }
-        addDoc(userCollection, data);
+        return data;
     }
     function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
+        // Sign Up using normal email (seperate manager and employee role)
+        console.log("Entered Sign Up");
         return createUserWithEmailAndPassword(auth, email, password).then((result) => {
             const user = result.user;
             const userID = user.uid;
             const companyCode = companyCodeGenerator(companyName);
-            companyName = authenticateUserToCompany(uniqueCode);
-            assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode);
+            authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
+                addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
+            })
         });
     }
     function logIn(email, password) {
+        // Log In using normal email and password
+        console.log("Entered Log In");
         return signInWithEmailAndPassword(auth, email, password);
     }
     function logOut() {
         signOut(auth).then((result) => {
             console.log(result);
-            console.log("Entered Sign Out");
+            console.log("Entered Log Out");
         }).catch((e) => { console.log(e) })
     }
     function googleSignIn() {
+        // Log in using Google email (have yet to edit to complement the two different roles)
         const googleAuthProvider = new GoogleAuthProvider();
         return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
             const user = result.user;
