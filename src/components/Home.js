@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "react-bootstrap";
 import { useNavigate } from "react-router";
+import { Link } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
 
 const Home = () => {
@@ -14,6 +15,7 @@ const Home = () => {
             console.log(error.message);
         }
     };
+
     return (
         <>
             <div className="p-4 box mt-3 text-center">
@@ -24,6 +26,7 @@ const Home = () => {
                 <Button variant="primary" onClick={handleLogout}>
                     Log out
                 </Button>
+                <Link to="/calendar">Calendar</Link>
             </div>
         </>
     );
