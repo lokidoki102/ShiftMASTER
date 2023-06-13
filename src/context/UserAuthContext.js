@@ -105,28 +105,28 @@ export function UserAuthContextProvider({ children }) {
             console.log("Entered Log Out");
         }).catch((e) => { console.log(e) })
     }
-    function googleSignIn() {
+    async function googleSignIn() {
         // Log in using Google email (have yet to edit to complement the two different roles)
         const googleAuthProvider = new GoogleAuthProvider();
+        let exist;
         return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
             const user = result.user;
             // This method is to check whether the Google Email exist within ShiftMaster FireBase
-            getDocs(userCollection).then((snapshot) => {
+            await getDocs(userCollection).then(async (snapshot) => {
                 let allUsers = [];
                 snapshot.docs.forEach((doc) => {
                     allUsers.push({ ...doc.data() })
                 })
                 for (var i = 0; i < allUsers.length; i++) {
                     if (allUsers[i].UserID === user.uid) {
-                        return;
+                        // It will return if the User ID exist in the userCollection
+                        exist = true;
                     }
                 }
-                const data = {
-                    UserID: user.uid,
-                    UserEmail: user.email,
-                }
-                addDoc(userCollection, data);
+                // This will be performed if the User ID does not exist in the userCollection
+                exist = false;
             })
+            return Promise.resolve(exist);
         });
     }
 

@@ -13,7 +13,7 @@ const Signup = () => {
     const [companyName, setCompanyName] = useState("");
     const [uniqueCode, setUniqueCode] = useState("");
     
-    const { signUp } = useUserAuth();
+    const { signUp, user } = useUserAuth();
     let navigate = useNavigate();
 
     const handleSubmit = async (e) => {

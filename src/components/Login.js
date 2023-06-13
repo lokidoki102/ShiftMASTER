@@ -26,8 +26,16 @@ const Login = () => {
     const handleGoogleSignIn = async (e) => {
         e.preventDefault();
         try {
-            await googleSignIn();
-            navigate("/home");
+            googleSignIn().then((result) => {
+                console.log(result);
+                if(result === false){
+                    console.log("Navigate to Sign Up (User Does Not Exist");
+                    navigate("/signup");
+                } else {
+                    console.log("Navigate to Home (User Exist)");
+                    navigate("/home");
+                }
+            });
         } catch (error) {
             console.log(error.message);
         }
