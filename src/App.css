@@ -166,7 +166,7 @@ body {
 .calendar-content {
     width: 50vw;
     height: 50vw;
-    justifyContent: center;
-    alignItems: center;
+    justify-content: center;
+    align-items: center;
     display: flex;
 }
