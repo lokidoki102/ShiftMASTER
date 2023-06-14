@@ -162,3 +162,11 @@ body {
 .active-content {
     display: block;
 }
+
+.calendar-content {
+    width: 50vw;
+    height: 50vw;
+    justifyContent: center;
+    alignItems: center;
+    display: flex;
+}
