@@ -13,15 +13,24 @@ const Signup = () => {
     const [companyName, setCompanyName] = useState("");
     const [uniqueCode, setUniqueCode] = useState("");
     
-    const { signUp, user } = useUserAuth();
+    const { signUp, user, signUpWitCredentials } = useUserAuth();
     let navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
+        console.log(user);
         try {
-            await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
-            navigate("/");
+            if(user === null){
+                // Sign Up using normal email (seperate manager and employee role)
+                console.log("Sign Up using Normal Email")
+                await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
+            } else {
+                // Sign Up using Google email (seperate manager and employee role)
+                console.log("Sign up using Google Email")
+                await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode);
+            }
+            navigate("/home");
         } catch (err) {
             setError(err.message);
         }
@@ -81,23 +90,33 @@ const Signup = () => {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicEmail">
-                                    <Form.Control
+                                    {user && <Form.Control 
+                                        className="login-box"
+                                        type="email"
+                                        placeholder={user.email}
+                                        disabled/>}
+                                    {!user && <Form.Control
                                         className="login-box"
                                         type="email"
                                         placeholder="Email Address"
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                    />
+                                    />}
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicPassword">
-                                    <Form.Control
+                                    {user && <Form.Control 
+                                        className="login-box"
+                                        type="password"
+                                        placeholder="******"
+                                        disabled/>}
+                                    {!user && <Form.Control
                                         className="login-box"
                                         type="password"
                                         placeholder="Password"
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                    />
+                                    />}
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicPhone">
@@ -152,23 +171,33 @@ const Signup = () => {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicEmail">
-                                    <Form.Control
+                                    {user && <Form.Control 
+                                        className="login-box"
+                                        type="email"
+                                        placeholder={user.email}
+                                        disabled/>}
+                                    {!user && <Form.Control
                                         className="login-box"
                                         type="email"
                                         placeholder="Email Address"
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                    />
+                                    />}
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicPassword">
-                                    <Form.Control
+                                    {user && <Form.Control 
+                                        className="login-box"
+                                        type="password"
+                                        placeholder="******"
+                                        disabled/>}
+                                    {!user && <Form.Control
                                         className="login-box"
                                         type="password"
                                         placeholder="Password"
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                    />
+                                    />}
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="formBasicPhone">

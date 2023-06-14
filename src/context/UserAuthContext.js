@@ -84,7 +84,7 @@ export function UserAuthContextProvider({ children }) {
     }
     function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
-        console.log("Entered Sign Up");
+        console.log("Entered Sign Up (Normal Email)");
         return createUserWithEmailAndPassword(auth, email, password).then((result) => {
             const user = result.user;
             const userID = user.uid;
@@ -94,21 +94,28 @@ export function UserAuthContextProvider({ children }) {
             })
         });
     }
+    function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
+        // Sign Up using Google email (seperate manager and employee role)
+        console.log("Entered Sign Up (Google Email)");
+        return onAuthStateChanged(auth, (user) => {
+            if(user){
+                const companyCode = companyCodeGenerator(companyName);
+                authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
+                    addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
+                })
+            }
+        });
+    }
     function logIn(email, password) {
         // Log In using normal email and password
         console.log("Entered Log In");
         return signInWithEmailAndPassword(auth, email, password);
     }
-    function logOut() {
-        signOut(auth).then((result) => {
-            console.log(result);
-            console.log("Entered Log Out");
-        }).catch((e) => { console.log(e) })
-    }
     async function googleSignIn() {
-        // Log in using Google email (have yet to edit to complement the two different roles)
+        // Log in using Google email
         const googleAuthProvider = new GoogleAuthProvider();
-        let exist;
+        // Exist will always be false if the User ID does not exist in the userCollection
+        let exist = false;
         return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
             const user = result.user;
             // This method is to check whether the Google Email exist within ShiftMaster FireBase
@@ -117,19 +124,25 @@ export function UserAuthContextProvider({ children }) {
                 snapshot.docs.forEach((doc) => {
                     allUsers.push({ ...doc.data() })
                 })
+                console.log(user.uid);
                 for (var i = 0; i < allUsers.length; i++) {
                     if (allUsers[i].UserID === user.uid) {
-                        // It will return if the User ID exist in the userCollection
+                        // It will return Exist to be true if the User ID exist in the userCollection
+                        console.log("Exist is True!")
                         exist = true;
-                    }
+                    } 
                 }
-                // This will be performed if the User ID does not exist in the userCollection
-                exist = false;
             })
             return Promise.resolve(exist);
         });
     }
-
+    function logOut() {
+        // Log out using both Google Email and normal email
+        signOut(auth).then((result) => {
+            console.log(result);
+            console.log("Entered Log Out");
+        }).catch((e) => { console.log(e) })
+    }
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentuser) => {
             console.log("Auth", currentuser);
@@ -139,9 +152,8 @@ export function UserAuthContextProvider({ children }) {
             unsubscribe();
         };
     }, []);
-
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials }}>
             {children}
         </userAuthContext.Provider>
     );

@@ -27,7 +27,6 @@ const Login = () => {
         e.preventDefault();
         try {
             googleSignIn().then((result) => {
-                console.log(result);
                 if(result === false){
                     console.log("Navigate to Sign Up (User Does Not Exist");
                     navigate("/signup");
