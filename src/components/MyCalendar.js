@@ -5,10 +5,12 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-
+import firebase from 'firebase/app';
+import 'firebase/firestore';
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
+// TODO Add a way to add dummy events from the UI itself
 
 class MyCalendar extends Component {
   // dummy events
@@ -45,6 +47,22 @@ class MyCalendar extends Component {
     });
   };
 
+  /**
+   * callback that is triggered when selecting on the 
+   * calendar 'slots'.
+   */
+  onSelecting = ({ start, end }) => {
+    // TODO 
+    // 1. Upon selection, the event should stay
+    // 2. 
+    console.log("Selecting:", start, end);
+  };
+
+//   onSelectSlot = ({ start, end }) => {
+//     console.log("Selecting:", start, end);
+//     // Perform any desired actions with the selected date range
+//   };
+
   render() {
     return (
       <div>
@@ -56,6 +74,9 @@ class MyCalendar extends Component {
           draggableAccessor={(event) => true}
           onEventDrop={this.onEventDrop}
           onEventResize={this.onEventResize}
+          onSelecting={this.onSelecting}
+        //   onSelectSlot={this.onSelectSlot}
+          selectable
           style={{
             height: "500px",
             width: "500px",
@@ -66,7 +87,7 @@ class MyCalendar extends Component {
         />
       </div>
     );
-  };
+  }
 }
 
 export default MyCalendar;
