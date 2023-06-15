@@ -1,25 +1,55 @@
-import React, { Component, useCallback, useState } from "react";
-
+import React, { Component, useCallback, useState, useEffect } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import { useRef } from "react";
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from "../firebase";
+
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
-// TODO Add a way to add dummy events from the UI itself
 
 const MyCalendar = () => {
-  // Dummy events
-  const [events, setEvents] = useState([
-    {
-      start: new Date(2023, 5, 1, 10, 0),
-      end: new Date(2023, 5, 1, 12, 0),
-      title: "Meeting",
-    },
-  ]);
+
+  const [events, setEvents] = useState([]);
+//   const [startDate, setStartDate] = useState(null);
+//   const [endDate, setEndDate] = useState(null);
+
+  useEffect(() => {
+    const initialStartDate = new Date(); // Set the initial visible start date
+    const initialEndDate = moment(initialStartDate).add(7, 'days').toDate(); // Set the initial visible end date
+
+    fetchEvents(initialStartDate, initialEndDate);
+  }, []);
+
+  const fetchEvents = useCallback((start, end) => {
+    const eventsRef = collection(db, 'shift');
+    const q = query(eventsRef, where('start', '>=', start), where('start', '<', end), orderBy('start'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedEvents = [];
+      querySnapshot.forEach((doc) => {
+        const eventData = doc.data();
+        fetchedEvents.push({
+          id: doc.id,
+          title: eventData.title,
+          start: eventData.start.toDate(),
+          end: eventData.end.toDate(),
+        });
+      });
+
+      setEvents(fetchedEvents);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleRangeChange = useCallback((start, end) => {
+    fetchEvents(start, end);
+  }, [fetchEvents]);
 
   // event handlers for calendar
   const onEventDrop = (data) => {
@@ -49,9 +79,6 @@ const MyCalendar = () => {
   };
 
   const onSelecting = ({ start, end }) => {
-    // TODO
-    // 1. Upon selection, the event should stay
-    // 2.
     console.log("Selecting:", start, end);
   };
 
