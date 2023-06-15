@@ -5,89 +5,79 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-import firebase from 'firebase/app';
-import 'firebase/firestore';
+import { useRef } from "react";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
 // TODO Add a way to add dummy events from the UI itself
 
-class MyCalendar extends Component {
-  // dummy events
-  state = {
-    events: [
+const MyCalendar = () => {
+  // Dummy events
+  const [events, setEvents] = useState([
+    {
+      start: new Date(2023, 5, 1, 10, 0),
+      end: new Date(2023, 5, 1, 12, 0),
+      title: "Meeting",
+    },
+  ]);
+
+  // event handlers for calendar
+  const onEventDrop = (data) => {
+    const { start, end } = data;
+    const updatedEvents = [
       {
-        start: new Date(2023, 5, 1, 10, 0),
-        end: new Date(2023, 5, 1, 12, 0),
-        title: "Meeting",
+        ...events[0],
+        start,
+        end,
       },
-      // Add more events as needed
-    ],
+      ...events.slice(1),
+    ];
+    setEvents(updatedEvents);
   };
 
-  // Called when after the dragged event is dropped
-  onEventDrop = (data) => {
+  const onEventResize = (data) => {
     const { start, end } = data;
-
-    this.setState((state) => {
-      this.state.events[0].start = start;
-      this.state.events[0].end = end;
-      return { events: [...state.events] };
-    });
+    const updatedEvents = [
+      {
+        ...events[0],
+        start,
+        end,
+      },
+      ...events.slice(1),
+    ];
+    setEvents(updatedEvents);
   };
 
-  // Called when event is resized
-  onEventResize = (data) => {
-    const { start, end } = data;
-
-    this.setState((state) => {
-      this.state.events[0].start = start;
-      this.state.events[0].end = end;
-      return { events: [...state.events] };
-    });
-  };
-
-  /**
-   * callback that is triggered when selecting on the 
-   * calendar 'slots'.
-   */
-  onSelecting = ({ start, end }) => {
-    // TODO 
+  const onSelecting = ({ start, end }) => {
+    // TODO
     // 1. Upon selection, the event should stay
-    // 2. 
+    // 2.
     console.log("Selecting:", start, end);
   };
 
-//   onSelectSlot = ({ start, end }) => {
-//     console.log("Selecting:", start, end);
-//     // Perform any desired actions with the selected date range
-//   };
-
-  render() {
-    return (
-      <div>
-        <DnDCalendar
-          localizer={localizer} // Specify the localizer (Moment.js in this example)
-          events={this.state.events} // Pass the events data
-          startAccessor="start" // Specify the property name for the start date/time
-          endAccessor="end" // Specify the property name for the end date/time
-          draggableAccessor={(event) => true}
-          onEventDrop={this.onEventDrop}
-          onEventResize={this.onEventResize}
-          onSelecting={this.onSelecting}
+  return (
+    <div>
+      <DnDCalendar
+        localizer={localizer} // Specify the localizer (Moment.js in this example)
+        events={events} // Pass the events data
+        startAccessor="start" // Specify the property name for the start date/time
+        endAccessor="end" // Specify the property name for the end date/time
+        draggableAccessor={(event) => true}
+        onEventDrop={onEventDrop}
+        onEventResize={onEventResize}
+        onSelecting={onSelecting}
         //   onSelectSlot={this.onSelectSlot}
-          selectable
-          style={{
-            height: "500px",
-            width: "500px",
-            justifyContent: "center",
-            alignItems: "center",
-            display: "flex",
-          }}
-        />
-      </div>
-    );
-  }
-}
+        selectable
+        style={{
+          height: "500px",
+          width: "500px",
+          justifyContent: "center",
+          alignItems: "center",
+          display: "flex",
+        }}
+      />
+    </div>
+  );
+}; // end of MyCalendar
 
 export default MyCalendar;
