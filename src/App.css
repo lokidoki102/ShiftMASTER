@@ -1,13 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;800&display=swap');
 
-#logo { 
-	position:fixed; 
-	top:0; 
-	left:0;
-    width: 50px;
-    height: 50px;
-}
-
 body {
     background-color: #fafafa;
     display: flex;
@@ -171,12 +163,4 @@ body {
 
 .active-content {
     display: block;
-}
-
-.calendar-content {
-    width: 50vw;
-    height: 50vw;
-    justifyContent: center;
-    alignItems: center;
-    display: flex;
 }

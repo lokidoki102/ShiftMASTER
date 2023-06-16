@@ -13,26 +13,35 @@ const Signup = () => {
     const [companyName, setCompanyName] = useState("");
     const [uniqueCode, setUniqueCode] = useState("");
     
-    const { signUp, user, signUpWitCredentials } = useUserAuth();
+    const { signUp, user, signUpWitCredentials, validation } = useUserAuth();
     let navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
         console.log(user);
+        let exist = await validation(uniqueCode);
         try {
-            if(user === null){
-                // Sign Up using normal email (seperate manager and employee role)
-                console.log("Sign Up using Normal Email")
-                await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
+            if(exist === true){
+                // The unique code existed in the database
+                if(user === null){
+                    // Sign Up using normal email (seperate manager and employee role)
+                    console.log("Sign Up using Normal Email")
+                    await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
+                } else {
+                    // Sign Up using Google email (seperate manager and employee role)
+                    console.log("Sign up using Google Email")
+                    await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode);
+                }
+                navigate("/home");
             } else {
-                // Sign Up using Google email (seperate manager and employee role)
-                console.log("Sign up using Google Email")
-                await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode);
+                alert("The unique code does not exist in the database. Please try again!");
+                e.target.reset();
+                navigate("/signup");
             }
-            navigate("/home");
         } catch (err) {
             setError(err.message);
+            e.target.reset();
         }
     };
 
