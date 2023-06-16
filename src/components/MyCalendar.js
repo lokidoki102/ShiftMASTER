@@ -19,8 +19,9 @@ const MyCalendar = () => {
 //   const [endDate, setEndDate] = useState(null);
 
   useEffect(() => {
-    const initialStartDate = new Date(); // Set the initial visible start date
-    const initialEndDate = moment(initialStartDate).add(7, 'days').toDate(); // Set the initial visible end date
+    const todayDate = new Date(); // Set the initial visible start date
+    const initialStartDate = moment(todayDate).subtract(16, 'days').toDate(); // Show 31 days
+    const initialEndDate = moment(todayDate).add(16, 'days').toDate(); // Show 31 days
 
     fetchEvents(initialStartDate, initialEndDate);
   }, []);
@@ -39,6 +40,9 @@ const MyCalendar = () => {
           start: eventData.start.toDate(),
           end: eventData.end.toDate(),
         });
+        console.log("printing title:");
+        console.log(eventData.title);
+
       });
 
       setEvents(fetchedEvents);
