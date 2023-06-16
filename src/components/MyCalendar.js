@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { Component, useCallback, useState } from "react";
 
 import { Calendar, momentLocalizer } from "react-big-calendar";
@@ -70,3 +71,5 @@ class MyCalendar extends Component {
 }
 
 export default MyCalendar;
+=======
+>>>>>>> caa626c7a5cb1542cd7ca17f4b79a39f5de0eaaf

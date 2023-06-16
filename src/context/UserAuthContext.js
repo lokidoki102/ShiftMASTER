@@ -56,6 +56,25 @@ export function UserAuthContextProvider({ children }) {
         })
         return Promise.resolve(finalCompanyName);
     }
+    async function validation(uniqueCode){
+        // Validate whether the unique code exist in the database before form submission
+        let exist = false;
+        if(uniqueCode === ""){
+            exist = true;
+        }
+        await getDocs(companyCodeCollection).then((snapshot) => {
+            let companies = [];
+            snapshot.docs.forEach((doc) => {
+                companies.push({ ...doc.data() })
+            })
+            for (var i = 0; i < companies.length; i++){
+                if(companies[i].CompanyCode === uniqueCode){
+                    exist = true;
+                }
+            }
+        })
+        return exist;
+    }
     function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
         // Assign roles based on the role: Employee/Manager
         let data = {};
@@ -108,7 +127,6 @@ export function UserAuthContextProvider({ children }) {
     }
     function logIn(email, password) {
         // Log In using normal email and password
-        console.log("Entered Log In");
         return signInWithEmailAndPassword(auth, email, password);
     }
     async function googleSignIn() {
@@ -128,7 +146,6 @@ export function UserAuthContextProvider({ children }) {
                 for (var i = 0; i < allUsers.length; i++) {
                     if (allUsers[i].UserID === user.uid) {
                         // It will return Exist to be true if the User ID exist in the userCollection
-                        console.log("Exist is True!")
                         exist = true;
                     } 
                 }
@@ -137,15 +154,14 @@ export function UserAuthContextProvider({ children }) {
         });
     }
     function logOut() {
-        // Log out using both Google Email and normal email
+        // Remove User Current Session (When Press Log Out or Back Button)
         signOut(auth).then((result) => {
             console.log(result);
-            console.log("Entered Log Out");
         }).catch((e) => { console.log(e) })
     }
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentuser) => {
-            console.log("Auth", currentuser);
+            console.log("User: ", currentuser);
             setUser(currentuser);
         });
         return () => {
@@ -153,7 +169,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation }}>
             {children}
         </userAuthContext.Provider>
     );
