@@ -14,23 +14,18 @@ import {
   addDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { Modal } from "react-bootstrap";
+import { Modal, Button, Form } from "react-bootstrap";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const [events, setEvents] = useState([]);
-  const [showModal, setShowModal] = useState(false);
 
   // Modal
-  const openModal = () => {
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-  };
+  const [show, setShow] = useState(false);
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
 
   // Pagination for fetching events
   useEffect(() => {
@@ -105,9 +100,8 @@ const MyCalendar = () => {
   const onSelectSlot = useCallback((slotInfo) => {
     console.log(slotInfo.start);
     console.log(slotInfo.end);
-    openModal();
+    handleShow();
   }, []);
-
 
   //   const onSelectSlot = async ({ start, end }) => {
   //     const newShift = {
@@ -150,10 +144,31 @@ const MyCalendar = () => {
         }}
       />
 
-      <Modal isOpen={showModal} onRequestClose={closeModal}>
-        <h2>Modal Title</h2>
-        <p>Modal content goes here...</p>
-        <button onClick={closeModal}>Close</button>
+      <Modal
+        show={show}
+        onHide={handleClose}
+        size="lg"
+        aria-labelledby="contained-modal-title-vcenter"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Modal heading</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+              Testing
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleClose}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );
