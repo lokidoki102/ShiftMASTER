@@ -20,6 +20,7 @@ const Login = () => {
             navigate("/home");
         } catch (err) {
             setError(err.message);
+            e.target.reset();
         }
     };
 
