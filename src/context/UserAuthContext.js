@@ -5,7 +5,7 @@ import {
     onAuthStateChanged,
     signOut,
     GoogleAuthProvider,
-    signInWithPopup,
+    signInWithPopup
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
@@ -37,23 +37,28 @@ export function UserAuthContextProvider({ children }) {
         addDoc(companyCodeCollection, companyData);
         return companyCode;
     }
+    async function getCodeCollection(codeCollection){
+        // Get all of the company code from Firebase and store into an array
+        let newArray = [];
+        await getDocs(codeCollection).then((snapshot) => {
+            snapshot.docs.forEach((doc) => {
+                newArray.push({ ...doc.data() })
+            })
+        })
+        return newArray;
+    }
     async function authenticateUserToCompany(uniqueCode, companyName){
         // Get the Company Name from the Unique Code (in case some companies name are identical)
-        if(uniqueCode === ""){
-            return Promise.resolve(companyName);
-        }
         let finalCompanyName = "";
-        await getDocs(companyCodeCollection).then((snapshot) => {
-            let companies = [];
-            snapshot.docs.forEach((doc) => {
-                companies.push({ ...doc.data() })
-            })
-            for (var i = 0; i < companies.length; i++){
-                if(companies[i].CompanyCode === uniqueCode){
-                    finalCompanyName = companies[i].Company;
-                }
+        let companies = await getCodeCollection(companyCodeCollection);
+        for (var i = 0; i < companies.length; i++){
+            if(companies[i].CompanyCode === uniqueCode){
+                finalCompanyName = companies[i].Company;
             }
-        })
+        }
+        if(uniqueCode === ""){
+            finalCompanyName = companyName;
+        }
         return Promise.resolve(finalCompanyName);
     }
     async function validation(uniqueCode){
@@ -62,17 +67,12 @@ export function UserAuthContextProvider({ children }) {
         if(uniqueCode === ""){
             exist = true;
         }
-        await getDocs(companyCodeCollection).then((snapshot) => {
-            let companies = [];
-            snapshot.docs.forEach((doc) => {
-                companies.push({ ...doc.data() })
-            })
-            for (var i = 0; i < companies.length; i++){
-                if(companies[i].CompanyCode === uniqueCode){
-                    exist = true;
-                }
+        let companies = await getCodeCollection(companyCodeCollection);
+        for (var i = 0; i < companies.length; i++){
+            if(companies[i].CompanyCode === uniqueCode){
+                exist = true;
             }
-        })
+        }
         return exist;
     }
     function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
@@ -134,28 +134,25 @@ export function UserAuthContextProvider({ children }) {
         const googleAuthProvider = new GoogleAuthProvider();
         // Exist will always be false if the User ID does not exist in the userCollection
         let exist = false;
+        // Sign In with Pop Up Issue:(https://www.reddit.com/r/Firebase/comments/q3u9ta/signinwithpopup_works_sometimes_and_sometimes_it/)
         return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
+            console.log("Entered with Google Pop Up");
             const user = result.user;
             // This method is to check whether the Google Email exist within ShiftMaster FireBase
-            await getDocs(userCollection).then(async (snapshot) => {
-                let allUsers = [];
-                snapshot.docs.forEach((doc) => {
-                    allUsers.push({ ...doc.data() })
-                })
-                console.log(user.uid);
-                for (var i = 0; i < allUsers.length; i++) {
-                    if (allUsers[i].UserID === user.uid) {
-                        // It will return Exist to be true if the User ID exist in the userCollection
-                        exist = true;
-                    } 
-                }
-            })
+            let users = await getCodeCollection(userCollection);
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].UserID === user.uid) {
+                    // It will return Exist to be true if the User ID exist in the userCollection
+                    exist = true;
+                } 
+            }
             return Promise.resolve(exist);
         });
     }
     function logOut() {
         // Remove User Current Session (When Press Log Out or Back Button)
         signOut(auth).then((result) => {
+            window.location.reload();
             console.log(result);
         }).catch((e) => { console.log(e) })
     }

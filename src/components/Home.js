@@ -9,13 +9,13 @@ const Home = () => {
     const navigate = useNavigate();
     const handleLogout = async () => {
         try {
-            console.log(user);
-            await logOut();
+            logOut();
             navigate("/");
         } catch (error) {
             console.log(error.message);
         }
     };
+    
     React.useEffect(() => {
         window.onpopstate = () => {
             if(user != null){

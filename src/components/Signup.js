@@ -35,12 +35,12 @@ const Signup = () => {
                 }
                 navigate("/home");
             } else {
-                alert("The unique code does not exist in the database. Please try again!");
+                setError("The unique code does not exist in the database. Please try again!");
                 e.target.reset();
                 navigate("/signup");
             }
         } catch (err) {
-            setError(err.message);
+            setError(err.message); setUniqueCode(""); setCompanyName("");
             e.target.reset();
         }
     };
