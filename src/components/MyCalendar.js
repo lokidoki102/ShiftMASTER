@@ -21,6 +21,10 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const [events, setEvents] = useState([]);
+  const [start, setStart] = useState({});
+  const [end, setEnd] = useState({});
+  const [newShift, setNewShift] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Modal
   const [show, setShow] = useState(false);
@@ -97,30 +101,54 @@ const MyCalendar = () => {
     setEvents(updatedEvents);
   };
 
-  const onSelectSlot = useCallback((slotInfo) => {
-    console.log(slotInfo.start);
-    console.log(slotInfo.end);
+  // Called when you select a date.
+  // This method is used for keeping track which day was selected
+  // so the right shift can be retrieved later on.
+  const onNavigate = (newDate) => {
+    console.log("navigating....")
+    console.log(newDate);
+    setSelectedDate(newDate);
+  };
+
+  // Called when changing views between month/day/week
+  const onView = (view) => {
+    if (view === 'day') {
+        console.log("viewing day...")
+      // Retrieve the current selected date when switching to the "Day" view
+      const currentDate = new Date(); // Replace with your logic to get the selected date
+      console.log(currentDate.toLocaleString());
+      setSelectedDate(currentDate);
+    }
+  };
+
+  const onSelectSlot = async ({ start, end }) => {
+    //TODO this should only be for day view
+    setStart(start);
+    setEnd(end);
     handleShow();
-  }, []);
+    setNewShift({
+      title: "New Shift",
+      start,
+      end,
+    });
 
-  //   const onSelectSlot = async ({ start, end }) => {
-  //     const newShift = {
-  //         title: 'New Shift',
-  //         start,
-  //         end,
-  //       };
+  };
 
-  //       try {
-  //         // Add the new event to Firestore
-  //         const docRef = await addDoc(collection(db, 'shift'), newShift);
-  //         console.log('Event added with ID:', docRef.id);
-
-  //         // Fetch the updated events from Firestore
-  //         fetchEvents(start, end);
-  //       } catch (error) {
-  //         console.error('Error adding event:', error);
-  //       }
-  //   };
+  const saveShift = async (newShift) => {
+    try {
+        // Add the new event to Firestore
+        const docRef = await addDoc(collection(db, "shift"), newShift);
+        console.log("Event added with ID:", docRef.id);
+        handleClose();
+  
+        // Refresh the shifts again for this date.
+        const initialStartDate = moment(selectedDate).subtract(1, "days").toDate(); // +- 1 day because range is exclusive
+        const initialEndDate = moment(selectedDate).add(1, "days").toDate();
+        fetchEvents(initialStartDate, initialEndDate);
+      } catch (error) {
+        console.error("Error adding event:", error);
+      }
+  }
 
   return (
     <div>
@@ -132,6 +160,8 @@ const MyCalendar = () => {
         draggableAccessor={(event) => true}
         onEventDrop={onEventDrop}
         onEventResize={onEventResize}
+        onNavigate={onNavigate}
+        onView={onView}
         // onSelecting={onSelecting}
         onSelectSlot={onSelectSlot}
         selectable
@@ -158,6 +188,8 @@ const MyCalendar = () => {
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               Testing
+              <h1>Start {start.toLocaleString()}</h1>
+              <h1>End {end.toLocaleString()}</h1>
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -165,7 +197,7 @@ const MyCalendar = () => {
           <Button variant="secondary" onClick={handleClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleClose}>
+          <Button variant="primary" onClick={() => saveShift(newShift)}>
             Save Changes
           </Button>
         </Modal.Footer>
