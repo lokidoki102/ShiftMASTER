@@ -21,10 +21,11 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const [events, setEvents] = useState([]);
-  const [start, setStart] = useState({});
-  const [end, setEnd] = useState({});
-  const [newShift, setNewShift] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [start, setStart] = useState({}); // the start datetime of the new shift
+  const [end, setEnd] = useState({}); // the end datetime of the new shift
+  const [newShift, setNewShift] = useState([]); // the new shift created
+  const [selectedDate, setSelectedDate] = useState(null); // the clicked date
+  const [currentView, setCurrentView] = useState("");
 
   // Modal
   const [show, setShow] = useState(false);
@@ -105,50 +106,62 @@ const MyCalendar = () => {
   // This method is used for keeping track which day was selected
   // so the right shift can be retrieved later on.
   const onNavigate = (newDate) => {
-    console.log("navigating....")
+    console.log("navigating....");
     console.log(newDate);
     setSelectedDate(newDate);
   };
 
   // Called when changing views between month/day/week
   const onView = (view) => {
-    if (view === 'day') {
-        console.log("viewing day...")
+    if (view === "day") {
+      console.log("viewing day...");
       // Retrieve the current selected date when switching to the "Day" view
       const currentDate = new Date(); // Replace with your logic to get the selected date
       console.log(currentDate.toLocaleString());
       setSelectedDate(currentDate);
+      setCurrentView("day");
+    }
+
+    if (view === "month") {
+      setCurrentView("month");
+    }
+
+    if (view === "week") {
+      setCurrentView("week");
     }
   };
 
   const onSelectSlot = async ({ start, end }) => {
-    //TODO this should only be for day view
-    setStart(start);
-    setEnd(end);
-    handleShow();
-    setNewShift({
-      title: "New Shift",
-      start,
-      end,
-    });
-
+    if (currentView == "day" || currentView == "week") {
+      //TODO this should only be for day view
+      setStart(start);
+      setEnd(end);
+      handleShow();
+      setNewShift({
+        title: "New Shift",
+        start,
+        end,
+      });
+    }
   };
 
   const saveShift = async (newShift) => {
     try {
-        // Add the new event to Firestore
-        const docRef = await addDoc(collection(db, "shift"), newShift);
-        console.log("Event added with ID:", docRef.id);
-        handleClose();
-  
-        // Refresh the shifts again for this date.
-        const initialStartDate = moment(selectedDate).subtract(1, "days").toDate(); // +- 1 day because range is exclusive
-        const initialEndDate = moment(selectedDate).add(1, "days").toDate();
-        fetchEvents(initialStartDate, initialEndDate);
-      } catch (error) {
-        console.error("Error adding event:", error);
-      }
-  }
+      // Add the new event to Firestore
+      const docRef = await addDoc(collection(db, "shift"), newShift);
+      console.log("Event added with ID:", docRef.id);
+      handleClose();
+
+      // Refresh the shifts again for this date.
+      const initialStartDate = moment(selectedDate)
+        .subtract(1, "days")
+        .toDate(); // +- 1 day because range is exclusive
+      const initialEndDate = moment(selectedDate).add(1, "days").toDate();
+      fetchEvents(initialStartDate, initialEndDate);
+    } catch (error) {
+      console.error("Error adding event:", error);
+    }
+  };
 
   return (
     <div>
