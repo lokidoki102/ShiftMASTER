@@ -179,11 +179,10 @@ const MyCalendar = () => {
         onSelectSlot={onSelectSlot}
         selectable
         style={{
-          height: "500px",
-          width: "500px",
+          height: "800px",
+          width: "1000px",
           justifyContent: "center",
           alignItems: "center",
-          display: "flex",
         }}
       />
 
