@@ -15,6 +15,13 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
+import TimePicker from "rc-time-picker";
+import "rc-time-picker/assets/index.css";
+import DateTimePicker from "react-datetime-picker";
+import "react-datetime-picker/dist/DateTimePicker.css";
+import "react-calendar/dist/Calendar.css";
+import "react-clock/dist/Clock.css";
+import "../App.css";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
@@ -31,6 +38,11 @@ const MyCalendar = () => {
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+
+  // time picker
+  const format = "h:mm a";
+  const now = moment().hour(0).minute(0);
+  const [value, onChange] = useState(new Date());
 
   // Pagination for fetching events
   useEffect(() => {
@@ -199,9 +211,13 @@ const MyCalendar = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-              Testing
-              <h1>Start {start.toLocaleString()}</h1>
-              <h1>End {end.toLocaleString()}</h1>
+              <div style={{ display: "flex", alignItems: "center" }}>
+              <p style={{marginRight:"10px"}}>From</p>
+              <DateTimePicker onChange={onChange} value={newShift.start} />
+              <p style={{marginRight:"10px", marginLeft:"10px"}}>to</p>
+              <DateTimePicker onChange={onChange} value={newShift.end} />
+              </div>
+              
             </Form.Group>
           </Form>
         </Modal.Body>

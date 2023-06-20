@@ -113,6 +113,12 @@ body {
     color: #242424 !important;
 }
 
+.sub-text {
+    color: #242424 !important;
+    font-size: 25px;
+    font-weight: 400;
+}
+
 .bloc-tabs {
     display: flex;
 }
@@ -174,9 +180,8 @@ body {
 }
 
 .calendar-content {
-    width: 50vw;
-    height: 50vw;
+    height: 800px;
+    width: 1000px;
     justify-content: center;
     align-items: center;
-    display: flex;
 }
