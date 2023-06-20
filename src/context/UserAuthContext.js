@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -46,6 +46,20 @@ export function UserAuthContextProvider({ children }) {
             })
         })
         return newArray;
+    }
+    async function getUserProfile(userId){
+        let data;
+        const docRef = query(collection(db, "users"), where("UserID", "==", userId));
+        try {
+            const docSnap = await getDocs(docRef);
+            docSnap.forEach((doc) => {
+                console.log(doc.id, ": ", doc.data());
+                data = doc.data();
+            });
+            return data;  
+        } catch(error){
+            console.log(error);
+        }
     }
     async function authenticateUserToCompany(uniqueCode, companyName){
         // Get the Company Name from the Unique Code (in case some companies name are identical)
@@ -166,7 +180,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile }}>
             {children}
         </userAuthContext.Provider>
     );

@@ -15,14 +15,6 @@ const Home = () => {
             console.log(error.message);
         }
     };
-    
-    React.useEffect(() => {
-        window.onpopstate = () => {
-            if(user != null){
-                logOut();
-            }
-        }
-    })
 
     return (
         <>
@@ -35,6 +27,7 @@ const Home = () => {
                     Log out
                 </Button>
                 <Link to="/calendar">Calendar</Link>
+                <Link to="/userprofile">User Profile</Link>
             </div>
         </>
     );
