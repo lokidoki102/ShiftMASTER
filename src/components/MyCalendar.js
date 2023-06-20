@@ -159,10 +159,10 @@ const MyCalendar = () => {
 
   const saveShift = async (newShift) => {
     try {
+        handleClose();
       // Add the new event to Firestore
       const docRef = await addDoc(collection(db, "shift"), newShift);
       console.log("Event added with ID:", docRef.id);
-      handleClose();
 
       // Refresh the shifts again for this date.
       const initialStartDate = moment(selectedDate)
