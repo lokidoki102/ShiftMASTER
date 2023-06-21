@@ -12,6 +12,8 @@ import {
   orderBy,
   onSnapshot,
   addDoc,
+  updateDoc,
+  doc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -28,21 +30,38 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const [events, setEvents] = useState([]);
-  const [start, setStart] = useState({}); // the start datetime of the new shift
-  const [end, setEnd] = useState({}); // the end datetime of the new shift
+  const [start, setStart] = useState(new Date()); // the start datetime of the new shift
+  const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
   const [newShift, setNewShift] = useState([]); // the new shift created
   const [selectedDate, setSelectedDate] = useState(null); // the clicked date
   const [currentView, setCurrentView] = useState("");
 
   // Modal
   const [show, setShow] = useState(false);
-  const handleClose = () => setShow(false);
+  const [showDelete, setShowDelete] = useState(false); // for delete button
+  const [showCreate, setShowCreate] = useState(false); // for create button
+  const handleClose = () => {
+    setShow(false);
+    setShowDelete(false);
+    setShowCreate(false);
+  };
   const handleShow = () => setShow(true);
 
   // time picker
-  const format = "h:mm a";
-  const now = moment().hour(0).minute(0);
-  const [value, onChange] = useState(new Date());
+  const onChangeStart = (date) => {
+    setNewShift((prevShift) => ({
+        ...prevShift,
+        start: date,
+      }));
+    setStart(date);
+  };
+  const onChangeEnd = (date) => {
+    setNewShift((prevShift) => ({
+        ...prevShift,
+        end: date,
+      }));
+    setEnd(date);
+  };
 
   // Pagination for fetching events
   useEffect(() => {
@@ -143,23 +162,46 @@ const MyCalendar = () => {
     }
   };
 
-  const onSelectSlot = async ({ start, end }) => {
+  // triggered when slot/s from day/week view is selected
+  const onSelectSlot = async ({ id, start, end }) => {
     if (currentView == "day" || currentView == "week") {
       //TODO this should only be for day view
       setStart(start);
       setEnd(end);
       handleShow();
       setNewShift({
+        id,
         title: "New Shift",
         start,
         end,
       });
+
+      setShowCreate(true);
     }
   };
 
-  const saveShift = async (newShift) => {
+  // triggered when a shift from the calendar is selected
+  const onSelectEvent = ({ id, start, end }) => {
+    // store selected event's start and end times
+    setStart(start);
+    setEnd(end);
+    setNewShift({
+      id, 
+      title: "New Shift",
+      start,
+      end,
+    });
+    console.log(id);
+
+    // show modal
+    setShowDelete(true);
+    handleShow();
+  };
+
+  // adding shifts into the firebase
+  const createShift = async (newShift) => {
     try {
-        handleClose();
+      handleClose();
       // Add the new event to Firestore
       const docRef = await addDoc(collection(db, "shift"), newShift);
       console.log("Event added with ID:", docRef.id);
@@ -172,6 +214,24 @@ const MyCalendar = () => {
       fetchEvents(initialStartDate, initialEndDate);
     } catch (error) {
       console.error("Error adding event:", error);
+    }
+  };
+
+  // updating a selected shift in the firebase
+  const saveShift = async (updatedShift) => {
+    try {
+      handleClose();
+      // Update the event in Firestore
+      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+
+      // Refresh the shifts again for this date.
+      const initialStartDate = moment(selectedDate)
+        .subtract(1, "days")
+        .toDate(); // +- 1 day because range is exclusive
+      const initialEndDate = moment(selectedDate).add(1, "days").toDate();
+      fetchEvents(initialStartDate, initialEndDate);
+    } catch (error) {
+      console.error("Error updating event:", error);
     }
   };
 
@@ -189,6 +249,7 @@ const MyCalendar = () => {
         onView={onView}
         // onSelecting={onSelecting}
         onSelectSlot={onSelectSlot}
+        onSelectEvent={onSelectEvent}
         selectable
         style={{
           height: "800px",
@@ -212,23 +273,29 @@ const MyCalendar = () => {
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
               <div style={{ display: "flex", alignItems: "center" }}>
-              <p style={{marginRight:"10px"}}>From</p>
-              <DateTimePicker onChange={onChange} value={newShift.start} />
-              <p style={{marginRight:"10px", marginLeft:"10px"}}>to</p>
-              <DateTimePicker onChange={onChange} value={newShift.end} />
+                <p style={{ marginRight: "10px" }}>From</p>
+                <DateTimePicker onChange={onChangeStart} value={start} />
+                <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
+                <DateTimePicker onChange={onChangeEnd} value={end} />
               </div>
-              
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
-          </Button>
-          <Button variant="primary" onClick={() => saveShift(newShift)}>
-            Save Changes
-          </Button>
+          {showCreate && (
+            <Button variant="primary" onClick={() => createShift(newShift)}>
+              Add Shift
+            </Button>
+          )}
         </Modal.Footer>
+        {showDelete && (
+          <Modal.Footer>
+            {showDelete && <Button variant="danger">Delete</Button>}
+            <Button variant="primary" onClick={() => saveShift(newShift)}>
+              Update
+            </Button>
+          </Modal.Footer>
+        )}
       </Modal>
     </div>
   );
