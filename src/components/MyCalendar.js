@@ -50,35 +50,47 @@ const MyCalendar = () => {
   // time picker
   const onChangeStart = (date) => {
     setNewShift((prevShift) => ({
-        ...prevShift,
-        start: date,
-      }));
+      ...prevShift,
+      start: date,
+    }));
     setStart(date);
   };
   const onChangeEnd = (date) => {
     setNewShift((prevShift) => ({
-        ...prevShift,
-        end: date,
-      }));
+      ...prevShift,
+      end: date,
+    }));
     setEnd(date);
   };
 
   // Pagination for fetching events
-  useEffect(() => {
-    const todayDate = new Date(); // Set the initial visible start date
-    const initialStartDate = moment(todayDate).subtract(16, "days").toDate(); // Show 31 days
-    const initialEndDate = moment(todayDate).add(16, "days").toDate(); // Show 31 days
+  //   useEffect(() => {
+  //     const todayDate = new Date(); // Set the initial visible start date
+  //     const initialStartDate = moment(todayDate).subtract(16, "days").toDate(); // Show 31 days
+  //     const initialEndDate = moment(todayDate).add(16, "days").toDate(); // Show 31 days
 
-    fetchEvents(initialStartDate, initialEndDate);
+  //     fetchEvents(initialStartDate, initialEndDate);
+  //   }, []);
+
+  useEffect(() => {
+    retrieveEvent(16, 16);
   }, []);
 
+  const retrieveEvent = (min, max) => {
+    const todayDate = new Date(); // Set the initial visible start date
+    const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
+    const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
+    queryDatebase(initialStartDate, initialEndDate);
+  };
+
   //  Query for shifts
-  const fetchEvents = useCallback((start, end) => {
+  const queryDatebase = useCallback((start, end) => {
     const eventsRef = collection(db, "shift");
     const q = query(
       eventsRef,
       where("start", ">=", start),
       where("start", "<", end),
+      where("isVisible", "==", true),
       orderBy("start")
     );
 
@@ -101,10 +113,6 @@ const MyCalendar = () => {
 
     return () => unsubscribe();
   }, []);
-
-  //   const handleRangeChange = useCallback((start, end) => {
-  //     fetchEvents(start, end);
-  //   }, [fetchEvents]);
 
   // event handlers for calendar
   const onEventDrop = (data) => {
@@ -154,6 +162,7 @@ const MyCalendar = () => {
     }
 
     if (view === "month") {
+      retrieveEvent(16, 16);
       setCurrentView("month");
     }
 
@@ -170,10 +179,11 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
-        id,
+        // id,
         title: "New Shift",
         start,
         end,
+        isVisible: true,
       });
 
       setShowCreate(true);
@@ -186,7 +196,7 @@ const MyCalendar = () => {
     setStart(start);
     setEnd(end);
     setNewShift({
-      id, 
+      id,
       title: "New Shift",
       start,
       end,
@@ -207,11 +217,14 @@ const MyCalendar = () => {
       console.log("Event added with ID:", docRef.id);
 
       // Refresh the shifts again for this date.
-      const initialStartDate = moment(selectedDate)
-        .subtract(1, "days")
-        .toDate(); // +- 1 day because range is exclusive
-      const initialEndDate = moment(selectedDate).add(1, "days").toDate();
-      fetchEvents(initialStartDate, initialEndDate);
+      //   const initialStartDate = moment(selectedDate)
+      //     .subtract(1, "days")
+      //     .toDate(); // +- 1 day because range is exclusive
+      //   const initialEndDate = moment(selectedDate).add(1, "days").toDate();
+      //   fetchEvents(initialStartDate, initialEndDate);
+      useEffect(() => {
+        retrieveEvent(1, 1);
+      }, []);
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -221,17 +234,33 @@ const MyCalendar = () => {
   const saveShift = async (updatedShift) => {
     try {
       handleClose();
-      // Update the event in Firestore
+      // Update the shift in Firestore
       await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
 
       // Refresh the shifts again for this date.
-      const initialStartDate = moment(selectedDate)
-        .subtract(1, "days")
-        .toDate(); // +- 1 day because range is exclusive
-      const initialEndDate = moment(selectedDate).add(1, "days").toDate();
-      fetchEvents(initialStartDate, initialEndDate);
+      //   const initialStartDate = moment(selectedDate)
+      //     .subtract(1, "days")
+      //     .toDate(); // +- 1 day because range is exclusive
+      //   const initialEndDate = moment(selectedDate).add(1, "days").toDate();
+      //   fetchEvents(initialStartDate, initialEndDate);
+      useEffect(() => {
+        retrieveEvent(1, 1);
+      }, []);
     } catch (error) {
       console.error("Error updating event:", error);
+    }
+  };
+
+  const deleteShift = async (updatedShift) => {
+    try {
+      handleClose();
+
+      updatedShift.isVisible = false; // Set isVisible to false
+
+      // Update shift in db
+      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+    } catch (error) {
+      console.error("Error deleting event:", error);
     }
   };
 
@@ -290,7 +319,11 @@ const MyCalendar = () => {
         </Modal.Footer>
         {showDelete && (
           <Modal.Footer>
-            {showDelete && <Button variant="danger">Delete</Button>}
+            {showDelete && (
+              <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                Delete
+              </Button>
+            )}
             <Button variant="primary" onClick={() => saveShift(newShift)}>
               Update
             </Button>
