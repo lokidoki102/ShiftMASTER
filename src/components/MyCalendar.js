@@ -63,15 +63,6 @@ const MyCalendar = () => {
     setEnd(date);
   };
 
-  // Pagination for fetching events
-  //   useEffect(() => {
-  //     const todayDate = new Date(); // Set the initial visible start date
-  //     const initialStartDate = moment(todayDate).subtract(16, "days").toDate(); // Show 31 days
-  //     const initialEndDate = moment(todayDate).add(16, "days").toDate(); // Show 31 days
-
-  //     fetchEvents(initialStartDate, initialEndDate);
-  //   }, []);
-
   useEffect(() => {
     retrieveEvent(16, 16);
   }, []);
@@ -104,8 +95,6 @@ const MyCalendar = () => {
           start: eventData.start.toDate(),
           end: eventData.end.toDate(),
         });
-        console.log("printing title:");
-        console.log(eventData.title);
       });
 
       setEvents(fetchedEvents);
@@ -145,15 +134,13 @@ const MyCalendar = () => {
   // This method is used for keeping track which day was selected
   // so the right shift can be retrieved later on.
   const onNavigate = (newDate) => {
-    console.log("navigating....");
-    console.log(newDate);
+    // console.log(newDate);
     setSelectedDate(newDate);
   };
 
   // Called when changing views between month/day/week
   const onView = (view) => {
     if (view === "day") {
-      console.log("viewing day...");
       // Retrieve the current selected date when switching to the "Day" view
       const currentDate = new Date(); // Replace with your logic to get the selected date
       console.log(currentDate.toLocaleString());
@@ -174,7 +161,7 @@ const MyCalendar = () => {
   // triggered when slot/s from day/week view is selected
   const onSelectSlot = async ({ id, start, end }) => {
     if (currentView == "day" || currentView == "week") {
-      //TODO this should only be for day view
+      //TODO title should be the person's name
       setStart(start);
       setEnd(end);
       handleShow();
@@ -201,7 +188,7 @@ const MyCalendar = () => {
       start,
       end,
     });
-    console.log(id);
+    // console.log(id);
 
     // show modal
     setShowDelete(true);
@@ -214,14 +201,8 @@ const MyCalendar = () => {
       handleClose();
       // Add the new event to Firestore
       const docRef = await addDoc(collection(db, "shift"), newShift);
-      console.log("Event added with ID:", docRef.id);
+    //   console.log("Event added with ID:", docRef.id);
 
-      // Refresh the shifts again for this date.
-      //   const initialStartDate = moment(selectedDate)
-      //     .subtract(1, "days")
-      //     .toDate(); // +- 1 day because range is exclusive
-      //   const initialEndDate = moment(selectedDate).add(1, "days").toDate();
-      //   fetchEvents(initialStartDate, initialEndDate);
       useEffect(() => {
         retrieveEvent(1, 1);
       }, []);
@@ -237,12 +218,6 @@ const MyCalendar = () => {
       // Update the shift in Firestore
       await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
 
-      // Refresh the shifts again for this date.
-      //   const initialStartDate = moment(selectedDate)
-      //     .subtract(1, "days")
-      //     .toDate(); // +- 1 day because range is exclusive
-      //   const initialEndDate = moment(selectedDate).add(1, "days").toDate();
-      //   fetchEvents(initialStartDate, initialEndDate);
       useEffect(() => {
         retrieveEvent(1, 1);
       }, []);
