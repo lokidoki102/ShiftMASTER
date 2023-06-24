@@ -97,61 +97,65 @@ const UserProfile = () => {
                         <div class="col-md-12 text-center">
                             <h3>List of Employees</h3>
                         </div>
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Status</th>
-                                    <th>Approve</th>
-                                    <th>Delete</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {allEmployees.map((perEmployee) => (
-                                <>
-                                <tr class="tbody">
-                                    <td>{perEmployee.UserName}</td>
-                                    <td>{perEmployee.UserEmail}</td>
-                                    <td>{perEmployee.UserPhoneNumber}</td>
-                                    <td>{perEmployee.Status}</td>
-                                    <td><input type="checkbox" onChange={(event) => {
-                                        let checked = event.target.checked;
-                                        setEmployees(allEmployees.map(data =>{
-                                            if(perEmployee.UserID === data.UserID){
-                                                data.select = checked;
-                                                if(data.select === true){
-                                                    perEmployee.Status = "Pending Approval";
-                                                } else if(data.select === false){
-                                                    perEmployee.Status = "Not Approved";
-                                                }
-                                            }
-                                            return data;
-                                        }));
-                                    }} disabled={perEmployee.Status === "Approved" || perEmployee.Status === "Pending Deletion"}></input></td>
-                                    <td><input type="checkbox" onChange={(event) => {
-                                        let checked = event.target.checked;
-                                        setEmployees(allEmployees.map(data => {
-                                            if(perEmployee.UserID === data.UserID){
-                                                data.select2 = checked;
-                                                if(data.select2 === true){
-                                                    perEmployee.Status = "Pending Deletion";
-                                                } else if(data.select2 === false){
-                                                    perEmployee.Status = "Approved";
-                                                }
-                                            }
-                                            return data;
-                                        }));
-                                    }} disabled={(perEmployee.Status === "Not Approved" || perEmployee.Status === "Pending Approval")}></input></td>
-                                </tr>
-                                </>
-                            ))}
-                            </tbody>
-                        </table>
-                        <button onClick={handleEmployeeSubmit}>Approve Pending Employee</button>
-                        <p></p>
-                        <button onClick={handleEmployeeDelete}>Delete Pending Employee</button>
+                        <div class="row">
+                            <div class="col-md-12 text-center">    
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Status</th>
+                                            <th>Approve</th>
+                                            <th>Delete</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {allEmployees.map((perEmployee) => (
+                                        <>
+                                        <tr class="tbody">
+                                            <td>{perEmployee.UserName}</td>
+                                            <td>{perEmployee.UserEmail}</td>
+                                            <td>{perEmployee.UserPhoneNumber}</td>
+                                            <td>{perEmployee.Status}</td>
+                                            <td><input type="checkbox" onChange={(event) => {
+                                                let checked = event.target.checked;
+                                                setEmployees(allEmployees.map(data =>{
+                                                    if(perEmployee.UserID === data.UserID){
+                                                        data.select = checked;
+                                                        if(data.select === true){
+                                                            perEmployee.Status = "Pending Approval";
+                                                        } else if(data.select === false){
+                                                            perEmployee.Status = "Not Approved";
+                                                        }
+                                                    }
+                                                    return data;
+                                                }));
+                                            }} disabled={perEmployee.Status === "Approved" || perEmployee.Status === "Pending Deletion"}></input></td>
+                                            <td><input type="checkbox" onChange={(event) => {
+                                                let checked = event.target.checked;
+                                                setEmployees(allEmployees.map(data => {
+                                                    if(perEmployee.UserID === data.UserID){
+                                                        data.select2 = checked;
+                                                        if(data.select2 === true){
+                                                            perEmployee.Status = "Pending Deletion";
+                                                        } else if(data.select2 === false){
+                                                            perEmployee.Status = "Approved";
+                                                        }
+                                                    }
+                                                    return data;
+                                                }));
+                                            }} disabled={(perEmployee.Status === "Not Approved" || perEmployee.Status === "Pending Approval")}></input></td>
+                                        </tr>
+                                        </>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button onClick={handleEmployeeSubmit}>Approve Pending Employee</button>
+                            <p></p>
+                            <button onClick={handleEmployeeDelete}>Delete Pending Employee</button>
+                        </div>
                     </div>
                 </div></>}
             {(user && oneUser.Role === "Employee") &&
