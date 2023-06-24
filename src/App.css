@@ -14,7 +14,8 @@ body {
     border: 2px solid #dfdfdf;
     background-color: #fff;
     border-radius: 10px;
-    padding-top: 10px;
+    width: 400px;
+    padding: 20px;
 }
 
 .g-btn {
