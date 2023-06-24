@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -49,14 +49,63 @@ export function UserAuthContextProvider({ children }) {
     }
     async function getUserProfile(userId){
         let data;
-        const docRef = query(collection(db, "users"), where("UserID", "==", userId));
+        const docRef = query(userCollection, where("UserID", "==", userId));
         try {
             const docSnap = await getDocs(docRef);
             docSnap.forEach((doc) => {
-                console.log(doc.id, ": ", doc.data());
                 data = doc.data();
             });
-            return data;  
+            return Promise.resolve(data);  
+        } catch(error){
+            console.log(error);
+        }
+    }
+    async function getAllEmployees(companyCode){
+        let data;
+        let newArray = [];
+        const docRef = query(userCollection, where("UniqueCode", "==", companyCode));
+        try {
+            const docSnap = await getDocs(docRef);
+            docSnap.forEach((doc) => {
+                data = doc.data();
+                newArray.push(data);
+            });
+            console.log(newArray);
+            return Promise.resolve(newArray); 
+        } catch(error) {
+            console.log(error);
+        }
+    }
+    async function approveEmployees(allEmployees){
+        try {
+            for(var i = 0; i < allEmployees.length; i++){
+                if(allEmployees[i].Status === "Pending Approval"){
+                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRef);
+                    docSnap.forEach(async (oneDoc) => {
+                        const newRef = doc(db, "users", oneDoc.id);
+                        await updateDoc(newRef, {
+                            Status: "Approved"
+                        });
+                    })
+                }
+            }
+        } catch(error){
+            console.log(error);
+        }
+    }
+    async function deleteEmployees(allEmployees){
+        try {
+            for(var i = 0; i < allEmployees.length; i++){
+                if(allEmployees[i].Status === "Pending Deletion"){
+                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRef);
+                    docSnap.forEach(async (oneDoc) => {
+                        const newRef = doc(db, "users", oneDoc.id);
+                        await deleteDoc(newRef);
+                    })
+                }
+            }
         } catch(error){
             console.log(error);
         }
@@ -109,6 +158,7 @@ export function UserAuthContextProvider({ children }) {
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
+                UniqueCode: uniqueCode,
                 Status: "Not Approved",
                 Role: "Employee"
             }
@@ -180,7 +230,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees }}>
             {children}
         </userAuthContext.Provider>
     );
