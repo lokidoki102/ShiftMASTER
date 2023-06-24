@@ -26,15 +26,7 @@ function App() {
                             />
                             <Route path="/" element={<Login />} />
                             <Route path="/signup" element={<Signup />} />
-                            <Route
-                                path="/calendar"
-                                element={
-                                    <ProtectedRoute>
-                                        <MyCalendar />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            {/* <Route path="/calendar" element={<MyCalendar />} /> */}
+                            <Route path="/calendar" element={<MyCalendar />} />
 
                         </Routes>
                     </UserAuthContextProvider>
