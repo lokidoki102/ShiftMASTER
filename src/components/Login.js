@@ -20,6 +20,7 @@ const Login = () => {
             navigate("/home");
         } catch (err) {
             setError(err.message);
+            e.target.reset();
         }
     };
 
@@ -42,7 +43,7 @@ const Login = () => {
 
     return (
         <>
-            <div className="p-4 box">
+            <div className="box">
                 <div className="mb-3 logo-placeholder">
                     <h2 className="inline bolded logo-white">Shift</h2>
                     <h2 className="inline bolded logo-black">MASTER</h2>

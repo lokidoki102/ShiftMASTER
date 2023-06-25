@@ -1,13 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Raleway:wght@300;800&display=swap');
 
-#logo { 
-	position:fixed; 
-	top:0; 
-	left:0;
-    width: 50px;
-    height: 50px;
-}
-
 body {
     background-color: #fafafa;
     display: flex;
@@ -22,7 +14,8 @@ body {
     border: 2px solid #dfdfdf;
     background-color: #fff;
     border-radius: 10px;
-    padding-top: 10px;
+    width: 400px;
+    padding: 20px;
 }
 
 .g-btn {

@@ -6,8 +6,10 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import MyCalendar from "./components/MyCalendar";
+import UserProfile from "./components/UserProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { UserAuthContextProvider } from "./context/UserAuthContext";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
     return (

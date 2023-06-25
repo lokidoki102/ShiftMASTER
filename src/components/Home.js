@@ -9,7 +9,7 @@ const Home = () => {
     const navigate = useNavigate();
     const handleLogout = async () => {
         try {
-            await logOut();
+            logOut();
             navigate("/");
         } catch (error) {
             console.log(error.message);
@@ -27,6 +27,7 @@ const Home = () => {
                     Log out
                 </Button>
                 <Link to="/calendar">Calendar</Link>
+                <Link to="/userprofile">User Profile</Link>
             </div>
         </>
     );

@@ -5,11 +5,11 @@ import {
     onAuthStateChanged,
     signOut,
     GoogleAuthProvider,
-    signInWithPopup,
+    signInWithPopup
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -38,24 +38,106 @@ export function UserAuthContextProvider({ children }) {
         addDoc(companyCodeCollection, companyData);
         return companyCode;
     }
-    async function authenticateUserToCompany(uniqueCode, companyName){
-        // Get the Company Name from the Unique Code (in case some companies name are identical)
-        if(uniqueCode === ""){
-            return Promise.resolve(companyName);
-        }
-        let finalCompanyName = "";
-        await getDocs(companyCodeCollection).then((snapshot) => {
-            let companies = [];
+    async function getCodeCollection(codeCollection){
+        // Get all of the company code from Firebase and store into an array
+        let newArray = [];
+        await getDocs(codeCollection).then((snapshot) => {
             snapshot.docs.forEach((doc) => {
-                companies.push({ ...doc.data() })
+                newArray.push({ ...doc.data() })
             })
-            for (var i = 0; i < companies.length; i++){
-                if(companies[i].CompanyCode === uniqueCode){
-                    finalCompanyName = companies[i].Company;
+        })
+        return newArray;
+    }
+    async function getUserProfile(userId){
+        let data;
+        const docRef = query(userCollection, where("UserID", "==", userId));
+        try {
+            const docSnap = await getDocs(docRef);
+            docSnap.forEach((doc) => {
+                data = doc.data();
+            });
+            return Promise.resolve(data);  
+        } catch(error){
+            console.log(error);
+        }
+    }
+    async function getAllEmployees(companyCode){
+        let data;
+        let newArray = [];
+        const docRef = query(userCollection, where("UniqueCode", "==", companyCode));
+        try {
+            const docSnap = await getDocs(docRef);
+            docSnap.forEach((doc) => {
+                data = doc.data();
+                newArray.push(data);
+            });
+            console.log(newArray);
+            return Promise.resolve(newArray); 
+        } catch(error) {
+            console.log(error);
+        }
+    }
+    async function approveEmployees(allEmployees){
+        try {
+            for(var i = 0; i < allEmployees.length; i++){
+                if(allEmployees[i].Status === "Pending Approval"){
+                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRef);
+                    docSnap.forEach(async (oneDoc) => {
+                        const newRef = doc(db, "users", oneDoc.id);
+                        await updateDoc(newRef, {
+                            Status: "Approved"
+                        });
+                    })
                 }
             }
-        })
+        } catch(error){
+            console.log(error);
+        }
+    }
+    async function deleteEmployees(allEmployees){
+        try {
+            for(var i = 0; i < allEmployees.length; i++){
+                if(allEmployees[i].Status === "Pending Deletion"){
+                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRef);
+                    docSnap.forEach(async (oneDoc) => {
+                        const newRef = doc(db, "users", oneDoc.id);
+                        await deleteDoc(newRef);
+                    })
+                }
+            }
+        } catch(error){
+            console.log(error);
+        }
+    }
+    async function authenticateUserToCompany(uniqueCode, companyName){
+        // Get the Company Name from the Unique Code (in case some companies name are identical)
+        let finalCompanyName = "";
+        let companies = await getCodeCollection(companyCodeCollection);
+        for (var i = 0; i < companies.length; i++){
+            if(companies[i].CompanyCode === uniqueCode){
+                finalCompanyName = companies[i].Company;
+            }
+        }
+        if(uniqueCode === ""){
+            finalCompanyName = companyName;
+        }
         return Promise.resolve(finalCompanyName);
+    }
+    async function validation(uniqueCode){
+        // Validate whether the unique code exist in the database before form submission
+        let exist = false;
+        if(uniqueCode === ""){
+            exist = true;
+        }
+        let companies = await getCodeCollection(companyCodeCollection);
+        for (var i = 0; i < companies.length; i++){
+            if(companies[i].CompanyCode === uniqueCode){
+                exist = true;
+            }
+        }
+        return exist;
     }
     function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
         // Assign roles based on the role: Employee/Manager
@@ -77,6 +159,7 @@ export function UserAuthContextProvider({ children }) {
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
+                UniqueCode: uniqueCode,
                 Status: "Not Approved",
                 Role: "Employee"
             }
@@ -109,7 +192,6 @@ export function UserAuthContextProvider({ children }) {
     }
     function logIn(email, password) {
         // Log In using normal email and password
-        console.log("Entered Log In");
         return signInWithEmailAndPassword(auth, email, password);
     }
     async function googleSignIn() {
@@ -117,36 +199,31 @@ export function UserAuthContextProvider({ children }) {
         const googleAuthProvider = new GoogleAuthProvider();
         // Exist will always be false if the User ID does not exist in the userCollection
         let exist = false;
+        // Sign In with Pop Up Issue:(https://www.reddit.com/r/Firebase/comments/q3u9ta/signinwithpopup_works_sometimes_and_sometimes_it/)
         return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
+            console.log("Entered with Google Pop Up");
             const user = result.user;
             // This method is to check whether the Google Email exist within ShiftMaster FireBase
-            await getDocs(userCollection).then(async (snapshot) => {
-                let allUsers = [];
-                snapshot.docs.forEach((doc) => {
-                    allUsers.push({ ...doc.data() })
-                })
-                console.log(user.uid);
-                for (var i = 0; i < allUsers.length; i++) {
-                    if (allUsers[i].UserID === user.uid) {
-                        // It will return Exist to be true if the User ID exist in the userCollection
-                        console.log("Exist is True!")
-                        exist = true;
-                    } 
-                }
-            })
+            let users = await getCodeCollection(userCollection);
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].UserID === user.uid) {
+                    // It will return Exist to be true if the User ID exist in the userCollection
+                    exist = true;
+                } 
+            }
             return Promise.resolve(exist);
         });
     }
     function logOut() {
-        // Log out using both Google Email and normal email
+        // Remove User Current Session (When Press Log Out or Back Button)
         signOut(auth).then((result) => {
+            window.location.reload();
             console.log(result);
-            console.log("Entered Log Out");
         }).catch((e) => { console.log(e) })
     }
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentuser) => {
-            console.log("Auth", currentuser);
+            console.log("User: ", currentuser);
             setUser(currentuser);
             setLoading(false);// Set loading to false when authentication state is resolved
         });
@@ -155,7 +232,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, loading }}>
             {children}
         </userAuthContext.Provider>
     );
