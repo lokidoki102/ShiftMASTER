@@ -32,7 +32,15 @@ function App() {
                                 path="/calendar"
                                 element={
                                     <ProtectedRoute>
-                                        <Home />
+                                        <MyCalendar />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/userprofile"
+                                element={
+                                    <ProtectedRoute>
+                                        <UserProfile />
                                     </ProtectedRoute>
                                 }
                             />
