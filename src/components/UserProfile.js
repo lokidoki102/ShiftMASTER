@@ -171,8 +171,8 @@ const UserProfile = () => {
             {(user && oneUser.Role === "Employee") &&
                 <><div class="container">
                     <div class="row">
-                        <div class="col-md-3"></div>
-                        <div class="col-md-6 text-center">
+                        <div class="col-md-1"></div>
+                        <div class="col-md-10 text-center">
                             <h2>Role: {oneUser.Role}</h2>
                             <h3>Status: {oneUser.Status}</h3>
                             <h3>Company Name: {oneUser.CompanyName}</h3>
