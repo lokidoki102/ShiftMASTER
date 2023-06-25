@@ -48,6 +48,7 @@ export function UserAuthContextProvider({ children }) {
         return newArray;
     }
     async function getUserProfile(userId){
+        // Get Individual User Profile
         let data;
         const docRef = query(userCollection, where("UserID", "==", userId));
         try {
@@ -61,6 +62,7 @@ export function UserAuthContextProvider({ children }) {
         }
     }
     async function getAllEmployees(companyCode){
+        // Get All Employees and Display in Manager Profile
         let data;
         let newArray = [];
         const docRef = query(userCollection, where("UniqueCode", "==", companyCode));
@@ -77,6 +79,7 @@ export function UserAuthContextProvider({ children }) {
         }
     }
     async function approveEmployees(allEmployees){
+        // Approve Employees that is selected in the checkbox
         try {
             for(var i = 0; i < allEmployees.length; i++){
                 if(allEmployees[i].Status === "Pending Approval"){
@@ -95,6 +98,7 @@ export function UserAuthContextProvider({ children }) {
         }
     }
     async function deleteEmployees(allEmployees){
+        // Delete Employees that is selected in the checkbox
         try {
             for(var i = 0; i < allEmployees.length; i++){
                 if(allEmployees[i].Status === "Pending Deletion"){

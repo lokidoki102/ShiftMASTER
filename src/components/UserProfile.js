@@ -171,14 +171,14 @@ const UserProfile = () => {
             {(user && oneUser.Role === "Employee") &&
                 <><div class="container">
                     <div class="row">
-                        <div class="col-md-3"></div>
-                        <div class="col-md-6 text-center">
-                            <h2>Role: {oneUser.Role}</h2>
-                            <h3>Status: {oneUser.Status}</h3>
-                            <h3>Company Name: {oneUser.CompanyName}</h3>
-                            <h3>Email: {oneUser.UserEmail}</h3>
-                            <h3>Name: {oneUser.UserName}</h3>
-                            <h3>Phone Number: {oneUser.UserPhoneNumber}</h3>
+                        <div class="col-md-1"></div>
+                        <div class="col-md-10 text-center">
+                            <h2>{oneUser.CompanyName}</h2>
+                            <h4>Role: {oneUser.Role}</h4>
+                            <h4>Status: {oneUser.Status}</h4>
+                            <h4>Email: {oneUser.UserEmail}</h4>
+                            <h4>Name: {oneUser.UserName}</h4>
+                            <h4>Phone Number: {oneUser.UserPhoneNumber}</h4>
                         </div>
                     </div>
                 </div></>}
