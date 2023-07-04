@@ -13,30 +13,42 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
     return (
-        <>
-            <Container>
-                <Row>
-                    <Col>
-                        <UserAuthContextProvider>
-                            <Routes>
-                                <Route
-                                    path="/home"
-                                    element={
-                                        <ProtectedRoute>
-                                            <Home />
-                                        </ProtectedRoute>
-                                    }
-                                />
-                                <Route path="/" element={<Login />} />
-                                <Route path="/signup" element={<Signup />} />
-                                <Route path="/calendar" element={<MyCalendar />} />
-                                <Route path="/userprofile" element={<UserProfile />} />
-                            </Routes>
-                        </UserAuthContextProvider>
-                    </Col>
-                </Row>
-            </Container>
-        </>
+        <Container>
+            <Row>
+                <Col>
+                    <UserAuthContextProvider>
+                        <Routes>
+                            <Route
+                                path="/home"
+                                element={
+                                    <ProtectedRoute>
+                                        <Home />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route path="/" element={<Login />} />
+                            <Route path="/signup" element={<Signup />} />
+                            <Route
+                                path="/calendar"
+                                element={
+                                    <ProtectedRoute>
+                                        <MyCalendar />
+                                    </ProtectedRoute>
+                                }
+                            />
+                            <Route
+                                path="/userprofile"
+                                element={
+                                    <ProtectedRoute>
+                                        <UserProfile />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Routes>
+                    </UserAuthContextProvider>
+                </Col>
+            </Row>
+        </Container>
     );
 }
 

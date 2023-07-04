@@ -6,14 +6,14 @@ import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
 import { useRef } from "react";
 import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  addDoc,
-  updateDoc,
-  doc,
+    collection,
+    query,
+    where,
+    orderBy,
+    onSnapshot,
+    addDoc,
+    updateDoc,
+    doc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -29,284 +29,289 @@ const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
-  const [events, setEvents] = useState([]);
-  const [start, setStart] = useState(new Date()); // the start datetime of the new shift
-  const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
-  const [newShift, setNewShift] = useState([]); // the new shift created
-  const [selectedDate, setSelectedDate] = useState(null); // the clicked date
-  const [currentView, setCurrentView] = useState("");
+    const [events, setEvents] = useState([]);
+    const [start, setStart] = useState(new Date()); // the start datetime of the new shift
+    const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
+    const [newShift, setNewShift] = useState([]); // the new shift created
+    const [selectedDate, setSelectedDate] = useState(null); // the clicked date
+    const [currentView, setCurrentView] = useState("");
 
-  // Modal
-  const [show, setShow] = useState(false);
-  const [showDelete, setShowDelete] = useState(false); // for delete button
-  const [showCreate, setShowCreate] = useState(false); // for create button
-  const handleClose = () => {
-    setShow(false);
-    setShowDelete(false);
-    setShowCreate(false);
-  };
-  const handleShow = () => setShow(true);
+    // Modal
+    const [show, setShow] = useState(false);
+    const [showDelete, setShowDelete] = useState(false); // for delete button
+    const [showCreate, setShowCreate] = useState(false); // for create button
+    const handleClose = () => {
+        setShow(false);
+        setShowDelete(false);
+        setShowCreate(false);
+    };
+    const handleShow = () => setShow(true);
 
-  // time picker
-  const onChangeStart = (date) => {
-    setNewShift((prevShift) => ({
-      ...prevShift,
-      start: date,
-    }));
-    setStart(date);
-  };
-  const onChangeEnd = (date) => {
-    setNewShift((prevShift) => ({
-      ...prevShift,
-      end: date,
-    }));
-    setEnd(date);
-  };
+    // time picker
+    const onChangeStart = (date) => {
+        setNewShift((prevShift) => ({
+            ...prevShift,
+            start: date,
+        }));
+        setStart(date);
+    };
+    const onChangeEnd = (date) => {
+        setNewShift((prevShift) => ({
+            ...prevShift,
+            end: date,
+        }));
+        setEnd(date);
+    };
 
-  useEffect(() => {
-    retrieveEvent(16, 16);
-  }, []);
+    useEffect(() => {
+        retrieveEvent(16, 16);
+    }, []);
 
-  const retrieveEvent = (min, max) => {
-    const todayDate = new Date(); // Set the initial visible start date
-    const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
-    const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
-    queryDatebase(initialStartDate, initialEndDate);
-  };
+    const retrieveEvent = (min, max) => {
+        const todayDate = new Date(); // Set the initial visible start date
+        const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
+        const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
+        queryDatebase(initialStartDate, initialEndDate);
+    };
 
-  //  Query for shifts
-  const queryDatebase = useCallback((start, end) => {
-    const eventsRef = collection(db, "shift");
-    const q = query(
-      eventsRef,
-      where("start", ">=", start),
-      where("start", "<", end),
-      where("isVisible", "==", true),
-      orderBy("start")
-    );
+    //  Query for shifts
+    const queryDatebase = useCallback((start, end) => {
+        const eventsRef = collection(db, "shift");
+        const q = query(
+            eventsRef,
+            where("start", ">=", start),
+            where("start", "<", end),
+            where("isVisible", "==", true),
+            orderBy("start")
+        );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedEvents = [];
-      querySnapshot.forEach((doc) => {
-        const eventData = doc.data();
-        fetchedEvents.push({
-          id: doc.id,
-          title: eventData.title,
-          start: eventData.start.toDate(),
-          end: eventData.end.toDate(),
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const fetchedEvents = [];
+            querySnapshot.forEach((doc) => {
+                const eventData = doc.data();
+                fetchedEvents.push({
+                    id: doc.id,
+                    title: eventData.title,
+                    start: eventData.start.toDate(),
+                    end: eventData.end.toDate(),
+                });
+            });
+
+            setEvents(fetchedEvents);
         });
-      });
 
-      setEvents(fetchedEvents);
-    });
+        return () => unsubscribe();
+    }, []);
 
-    return () => unsubscribe();
-  }, []);
+    // event handlers for calendar
+    const onEventDrop = (data) => {
+        const { start, end } = data;
+        const updatedEvents = [
+            {
+                ...events[0],
+                start,
+                end,
+            },
+            ...events.slice(1),
+        ];
+        setEvents(updatedEvents);
+    };
 
-  // event handlers for calendar
-  const onEventDrop = (data) => {
-    const { start, end } = data;
-    const updatedEvents = [
-      {
-        ...events[0],
-        start,
-        end,
-      },
-      ...events.slice(1),
-    ];
-    setEvents(updatedEvents);
-  };
+    const onEventResize = (data) => {
+        const { start, end } = data;
+        const updatedEvents = [
+            {
+                ...events[0],
+                start,
+                end,
+            },
+            ...events.slice(1),
+        ];
+        setEvents(updatedEvents);
+    };
 
-  const onEventResize = (data) => {
-    const { start, end } = data;
-    const updatedEvents = [
-      {
-        ...events[0],
-        start,
-        end,
-      },
-      ...events.slice(1),
-    ];
-    setEvents(updatedEvents);
-  };
+    // Called when you select a date.
+    // This method is used for keeping track which day was selected
+    // so the right shift can be retrieved later on.
+    const onNavigate = (newDate) => {
+        // console.log(newDate);
+        setSelectedDate(newDate);
+    };
 
-  // Called when you select a date.
-  // This method is used for keeping track which day was selected
-  // so the right shift can be retrieved later on.
-  const onNavigate = (newDate) => {
-    // console.log(newDate);
-    setSelectedDate(newDate);
-  };
+    // Called when changing views between month/day/week
+    const onView = (view) => {
+        if (view === "day") {
+            // Retrieve the current selected date when switching to the "Day" view
+            const currentDate = new Date(); // Replace with your logic to get the selected date
+            console.log(currentDate.toLocaleString());
+            setSelectedDate(currentDate);
+            setCurrentView("day");
+        }
 
-  // Called when changing views between month/day/week
-  const onView = (view) => {
-    if (view === "day") {
-      // Retrieve the current selected date when switching to the "Day" view
-      const currentDate = new Date(); // Replace with your logic to get the selected date
-      console.log(currentDate.toLocaleString());
-      setSelectedDate(currentDate);
-      setCurrentView("day");
-    }
+        if (view === "month") {
+            retrieveEvent(16, 16);
+            setCurrentView("month");
+        }
 
-    if (view === "month") {
-      retrieveEvent(16, 16);
-      setCurrentView("month");
-    }
+        if (view === "week") {
+            setCurrentView("week");
+        }
+    };
 
-    if (view === "week") {
-      setCurrentView("week");
-    }
-  };
+    // triggered when slot/s from day/week view is selected
+    const onSelectSlot = async ({ id, start, end }) => {
+        if (currentView == "day" || currentView == "week") {
+            //TODO title should be the person's name
+            setStart(start);
+            setEnd(end);
+            handleShow();
+            setNewShift({
+                // id,
+                title: "New Shift",
+                start,
+                end,
+                isVisible: true,
+            });
 
-  // triggered when slot/s from day/week view is selected
-  const onSelectSlot = async ({ id, start, end }) => {
-    if (currentView == "day" || currentView == "week") {
-      //TODO title should be the person's name
-      setStart(start);
-      setEnd(end);
-      handleShow();
-      setNewShift({
-        // id,
-        title: "New Shift",
-        start,
-        end,
-        isVisible: true,
-      });
+            setShowCreate(true);
+        }
+    };
 
-      setShowCreate(true);
-    }
-  };
+    // triggered when a shift from the calendar is selected
+    const onSelectEvent = ({ id, start, end }) => {
+        // store selected event's start and end times
+        setStart(start);
+        setEnd(end);
+        setNewShift({
+            id,
+            title: "New Shift",
+            start,
+            end,
+        });
+        // console.log(id);
 
-  // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end }) => {
-    // store selected event's start and end times
-    setStart(start);
-    setEnd(end);
-    setNewShift({
-      id,
-      title: "New Shift",
-      start,
-      end,
-    });
-    // console.log(id);
+        // show modal
+        setShowDelete(true);
+        handleShow();
+    };
 
-    // show modal
-    setShowDelete(true);
-    handleShow();
-  };
+    // adding shifts into the firebase
+    const createShift = async (newShift) => {
+        try {
+            handleClose();
+            // Add the new event to Firestore
+            const docRef = await addDoc(collection(db, "shift"), newShift);
+            //   console.log("Event added with ID:", docRef.id);
 
-  // adding shifts into the firebase
-  const createShift = async (newShift) => {
-    try {
-      handleClose();
-      // Add the new event to Firestore
-      const docRef = await addDoc(collection(db, "shift"), newShift);
-    //   console.log("Event added with ID:", docRef.id);
+            useEffect(() => {
+                retrieveEvent(1, 1);
+            }, []);
+        } catch (error) {
+            console.error("Error adding event:", error);
+        }
+    };
 
-      useEffect(() => {
-        retrieveEvent(1, 1);
-      }, []);
-    } catch (error) {
-      console.error("Error adding event:", error);
-    }
-  };
+    // updating a selected shift in the firebase
+    const saveShift = async (updatedShift) => {
+        try {
+            handleClose();
+            // Update the shift in Firestore
+            await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
 
-  // updating a selected shift in the firebase
-  const saveShift = async (updatedShift) => {
-    try {
-      handleClose();
-      // Update the shift in Firestore
-      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+            useEffect(() => {
+                retrieveEvent(1, 1);
+            }, []);
+        } catch (error) {
+            console.error("Error updating event:", error);
+        }
+    };
 
-      useEffect(() => {
-        retrieveEvent(1, 1);
-      }, []);
-    } catch (error) {
-      console.error("Error updating event:", error);
-    }
-  };
+    const deleteShift = async (updatedShift) => {
+        try {
+            handleClose();
 
-  const deleteShift = async (updatedShift) => {
-    try {
-      handleClose();
+            updatedShift.isVisible = false; // Set isVisible to false
 
-      updatedShift.isVisible = false; // Set isVisible to false
+            // Update shift in db
+            await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+        } catch (error) {
+            console.error("Error deleting event:", error);
+        }
+    };
 
-      // Update shift in db
-      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
-    } catch (error) {
-      console.error("Error deleting event:", error);
-    }
-  };
+    return (
+        <><div class="container">
+            <div class="row">
+                <div class="d-flex justify-content-center">
+                    <div>
+                        <DnDCalendar
+                            localizer={localizer} // Specify the localizer (Moment.js in this example)
+                            events={events} // Pass the events data
+                            startAccessor="start" // Specify the property name for the start date/time
+                            endAccessor="end" // Specify the property name for the end date/time
+                            draggableAccessor={(event) => true}
+                            onEventDrop={onEventDrop}
+                            onEventResize={onEventResize}
+                            onNavigate={onNavigate}
+                            onView={onView}
+                            // onSelecting={onSelecting}
+                            onSelectSlot={onSelectSlot}
+                            onSelectEvent={onSelectEvent}
+                            selectable
+                            style={{
+                                height: "800px",
+                                width: "1000px",
+                                justifyContent: "center",
+                                alignItems: "center",
+                            }} />
 
-  return (
-    <div>
-      <DnDCalendar
-        localizer={localizer} // Specify the localizer (Moment.js in this example)
-        events={events} // Pass the events data
-        startAccessor="start" // Specify the property name for the start date/time
-        endAccessor="end" // Specify the property name for the end date/time
-        draggableAccessor={(event) => true}
-        onEventDrop={onEventDrop}
-        onEventResize={onEventResize}
-        onNavigate={onNavigate}
-        onView={onView}
-        // onSelecting={onSelecting}
-        onSelectSlot={onSelectSlot}
-        onSelectEvent={onSelectEvent}
-        selectable
-        style={{
-          height: "800px",
-          width: "1000px",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      />
-
-      <Modal
-        show={show}
-        onHide={handleClose}
-        size="lg"
-        aria-labelledby="contained-modal-title-vcenter"
-        centered
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Modal heading</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <p style={{ marginRight: "10px" }}>From</p>
-                <DateTimePicker onChange={onChangeStart} value={start} />
-                <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
-                <DateTimePicker onChange={onChangeEnd} value={end} />
-              </div>
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          {showCreate && (
-            <Button variant="primary" onClick={() => createShift(newShift)}>
-              Add Shift
-            </Button>
-          )}
-        </Modal.Footer>
-        {showDelete && (
-          <Modal.Footer>
-            {showDelete && (
-              <Button variant="danger" onClick={() => deleteShift(newShift)}>
-                Delete
-              </Button>
-            )}
-            <Button variant="primary" onClick={() => saveShift(newShift)}>
-              Update
-            </Button>
-          </Modal.Footer>
-        )}
-      </Modal>
-    </div>
-  );
+                        <Modal
+                            show={show}
+                            onHide={handleClose}
+                            size="lg"
+                            aria-labelledby="contained-modal-title-vcenter"
+                            centered
+                        >
+                            <Modal.Header closeButton>
+                                <Modal.Title>Modal heading</Modal.Title>
+                            </Modal.Header>
+                            <Modal.Body>
+                                <Form>
+                                    <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                                        <div style={{ display: "flex", alignItems: "center" }}>
+                                            <p style={{ marginRight: "10px" }}>From</p>
+                                            <DateTimePicker onChange={onChangeStart} value={start} />
+                                            <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
+                                            <DateTimePicker onChange={onChangeEnd} value={end} />
+                                        </div>
+                                    </Form.Group>
+                                </Form>
+                            </Modal.Body>
+                            <Modal.Footer>
+                                {showCreate && (
+                                    <Button variant="primary" onClick={() => createShift(newShift)}>
+                                        Add Shift
+                                    </Button>
+                                )}
+                            </Modal.Footer>
+                            {showDelete && (
+                                <Modal.Footer>
+                                    {showDelete && (
+                                        <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                                            Delete
+                                        </Button>
+                                    )}
+                                    <Button variant="primary" onClick={() => saveShift(newShift)}>
+                                        Update
+                                    </Button>
+                                </Modal.Footer>
+                            )}
+                        </Modal>
+                    </div>
+                </div>
+            </div>
+        </div></>
+    );
 }; // end of MyCalendar
 
 export default MyCalendar;

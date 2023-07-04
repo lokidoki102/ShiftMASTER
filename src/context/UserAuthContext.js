@@ -195,7 +195,21 @@ export function UserAuthContextProvider({ children }) {
     }
     function logIn(email, password) {
         // Log In using normal email and password
-        return signInWithEmailAndPassword(auth, email, password);
+        // Exist will always be false if the User ID does not exist in the userCollection
+        let exist = false;
+        return signInWithEmailAndPassword(auth, email, password).then(async (result) => {
+            console.log("Entered with Normal Log In");
+            let user = result.user;
+            // This method is to check whether the Normal Email exist within ShiftMaster FireBase
+            let users = await getCodeCollection(userCollection);
+            for (var i = 0; i < users.length; i++) {
+                if (users[i].UserID === user.uid) {
+                    // It will return Exist to be true if the User ID exist in the userCollection
+                    exist = true;
+                } 
+            }
+            return Promise.resolve(exist);
+        });
     }
     async function googleSignIn() {
         // Log in using Google email
