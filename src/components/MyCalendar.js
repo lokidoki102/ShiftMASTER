@@ -14,6 +14,8 @@ import {
   addDoc,
   updateDoc,
   doc,
+  collectionGroup,
+  getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -24,12 +26,14 @@ import "react-datetime-picker/dist/DateTimePicker.css";
 import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
 import "../App.css";
+import { useUserAuth } from "../context/UserAuthContext";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
-  const [events, setEvents] = useState([]);
+  const { user } = useUserAuth();
+  const [shifts, setShifts] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
   const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
   const [newShift, setNewShift] = useState([]); // the new shift created
@@ -71,35 +75,50 @@ const MyCalendar = () => {
     const todayDate = new Date(); // Set the initial visible start date
     const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
     const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
-    queryDatebase(initialStartDate, initialEndDate);
+    queryDatabase(initialStartDate, initialEndDate);
   };
 
   //  Query for shifts
-  const queryDatebase = useCallback((start, end) => {
-    const eventsRef = collection(db, "shift");
-    const q = query(
-      eventsRef,
-      where("start", ">=", start),
-      where("start", "<", end),
-      where("isVisible", "==", true),
-      orderBy("start")
-    );
+  const queryDatabase = useCallback((start, end) => {
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedEvents = [];
-      querySnapshot.forEach((doc) => {
-        const eventData = doc.data();
-        fetchedEvents.push({
-          id: doc.id,
-          title: eventData.title,
-          start: eventData.start.toDate(),
-          end: eventData.end.toDate(),
-        });
-      });
+    const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
-      setEvents(fetchedEvents);
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+      const fetchedShifts = [];
+
+      await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          console.log("Document ID:", doc.id);
+          console.log("Document data:", doc.data());
+
+          // Retrieve the subcollection inside the document
+          const subcollectionRef = collection(doc.ref, "shift");
+          const subcollectionQuery = query(
+            subcollectionRef,
+            where("UserID", "==", user.uid),
+            where("start", ">=", start),
+            where("start", "<", end),
+            where("isVisible", "==", true),
+            orderBy("start")
+          );
+          const subcollectionSnapshot = await getDocs(subcollectionQuery);
+
+          subcollectionSnapshot.forEach((subdoc) => {
+            const shiftData = subdoc.data();
+            fetchedShifts.push({
+              id: subdoc.id,
+              title: shiftData.title,
+              start: shiftData.start.toDate(),
+              end: shiftData.end.toDate(),
+            });
+
+            console.log("Subdocument ID:", subdoc.id);
+            console.log("Subdocument data:", subdoc.data());
+          });
+        })
+      );
+      setShifts(fetchedShifts);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -108,26 +127,26 @@ const MyCalendar = () => {
     const { start, end } = data;
     const updatedEvents = [
       {
-        ...events[0],
+        ...shifts[0],
         start,
         end,
       },
-      ...events.slice(1),
+      ...shifts.slice(1),
     ];
-    setEvents(updatedEvents);
+    setShifts(updatedEvents);
   };
 
   const onEventResize = (data) => {
     const { start, end } = data;
     const updatedEvents = [
       {
-        ...events[0],
+        ...shifts[0],
         start,
         end,
       },
-      ...events.slice(1),
+      ...shifts.slice(1),
     ];
-    setEvents(updatedEvents);
+    setShifts(updatedEvents);
   };
 
   // Called when you select a date.
@@ -201,7 +220,7 @@ const MyCalendar = () => {
       handleClose();
       // Add the new event to Firestore
       const docRef = await addDoc(collection(db, "shift"), newShift);
-    //   console.log("Event added with ID:", docRef.id);
+      //   console.log("Event added with ID:", docRef.id);
 
       useEffect(() => {
         retrieveEvent(1, 1);
@@ -243,7 +262,7 @@ const MyCalendar = () => {
     <div>
       <DnDCalendar
         localizer={localizer} // Specify the localizer (Moment.js in this example)
-        events={events} // Pass the events data
+        events={shifts} // Pass the events data
         startAccessor="start" // Specify the property name for the start date/time
         endAccessor="end" // Specify the property name for the end date/time
         draggableAccessor={(event) => true}
