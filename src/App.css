@@ -63,6 +63,15 @@ body {
     border-radius: 5px !important;
 }
 
+.btn-secondary {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    font-family: 'Raleway', sans-serif !important;
+    background-color: #242424 !important;
+    border-color: #242424 !important;
+    border-radius: 5px !important;
+}
+
 .logo-white {
     color: #fff;
     background-color: #242424;
@@ -181,4 +190,8 @@ body {
     width: 1000px;
     justify-content: center;
     align-items: center;
+}
+
+#spacing {
+    padding: 25px;
 }

@@ -18,15 +18,15 @@ const companyCodeCollection = collection(db, "companies");
 export function UserAuthContextProvider({ children }) {
     const [user, setUser] = useState({});
 
-    function companyCodeGenerator(companyName){
+    function companyCodeGenerator(companyName) {
         // Generate unique company codes upon signing up by the Manager and store company codes into companyCodeCollection
-        if(companyName === ""){
+        if (companyName === "") {
             return;
         }
-        const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
         const charactersLength = characters.length;
-        for ( let i = 0; i < 4; i++ ) {
+        for (let i = 0; i < 4; i++) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
         }
         let companyCode = companyName.concat("-", result);
@@ -37,7 +37,7 @@ export function UserAuthContextProvider({ children }) {
         addDoc(companyCodeCollection, companyData);
         return companyCode;
     }
-    async function getCodeCollection(codeCollection){
+    async function getCodeCollection(codeCollection) {
         // Get all of the company code from Firebase and store into an array
         let newArray = [];
         await getDocs(codeCollection).then((snapshot) => {
@@ -47,7 +47,7 @@ export function UserAuthContextProvider({ children }) {
         })
         return newArray;
     }
-    async function getUserProfile(userId){
+    async function getUserProfile(userId) {
         // Get Individual User Profile
         let data;
         const docRef = query(userCollection, where("UserID", "==", userId));
@@ -56,12 +56,30 @@ export function UserAuthContextProvider({ children }) {
             docSnap.forEach((doc) => {
                 data = doc.data();
             });
-            return Promise.resolve(data);  
-        } catch(error){
+            return Promise.resolve(data);
+        } catch (error) {
             console.log(error);
         }
     }
-    async function getAllEmployees(companyCode){
+    async function updateUserProfile(userId, name, phoneNumber) {
+        // Update User Profile
+        let data;
+        const docRef = query(userCollection, where("UserID", "==", userId));
+        try {
+            const docSnap = await getDocs(docRef);
+            docSnap.forEach(async (oneDoc) => {
+                const newRef = doc(db, "users", oneDoc.id);
+                await updateDoc(newRef, {
+                    UserName: name,
+                    UserPhoneNumber: phoneNumber
+                });
+            })
+            return Promise.resolve(data);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    async function getAllEmployees(companyCode) {
         // Get All Employees and Display in Manager Profile
         let data;
         let newArray = [];
@@ -73,16 +91,16 @@ export function UserAuthContextProvider({ children }) {
                 newArray.push(data);
             });
             console.log(newArray);
-            return Promise.resolve(newArray); 
-        } catch(error) {
+            return Promise.resolve(newArray);
+        } catch (error) {
             console.log(error);
         }
     }
-    async function approveEmployees(allEmployees){
+    async function approveEmployees(allEmployees) {
         // Approve Employees that is selected in the checkbox
         try {
-            for(var i = 0; i < allEmployees.length; i++){
-                if(allEmployees[i].Status === "Pending Approval"){
+            for (var i = 0; i < allEmployees.length; i++) {
+                if (allEmployees[i].Status === "Pending Approval") {
                     const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
@@ -93,15 +111,15 @@ export function UserAuthContextProvider({ children }) {
                     })
                 }
             }
-        } catch(error){
+        } catch (error) {
             console.log(error);
         }
     }
-    async function deleteEmployees(allEmployees){
+    async function deleteEmployees(allEmployees) {
         // Delete Employees that is selected in the checkbox
         try {
-            for(var i = 0; i < allEmployees.length; i++){
-                if(allEmployees[i].Status === "Pending Deletion"){
+            for (var i = 0; i < allEmployees.length; i++) {
+                if (allEmployees[i].Status === "Pending Deletion") {
                     const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
@@ -110,42 +128,42 @@ export function UserAuthContextProvider({ children }) {
                     })
                 }
             }
-        } catch(error){
+        } catch (error) {
             console.log(error);
         }
     }
-    async function authenticateUserToCompany(uniqueCode, companyName){
+    async function authenticateUserToCompany(uniqueCode, companyName) {
         // Get the Company Name from the Unique Code (in case some companies name are identical)
         let finalCompanyName = "";
         let companies = await getCodeCollection(companyCodeCollection);
-        for (var i = 0; i < companies.length; i++){
-            if(companies[i].CompanyCode === uniqueCode){
+        for (var i = 0; i < companies.length; i++) {
+            if (companies[i].CompanyCode === uniqueCode) {
                 finalCompanyName = companies[i].Company;
             }
         }
-        if(uniqueCode === ""){
+        if (uniqueCode === "") {
             finalCompanyName = companyName;
         }
         return Promise.resolve(finalCompanyName);
     }
-    async function validation(uniqueCode){
+    async function validation(uniqueCode) {
         // Validate whether the unique code exist in the database before form submission
         let exist = false;
-        if(uniqueCode === ""){
+        if (uniqueCode === "") {
             exist = true;
         }
         let companies = await getCodeCollection(companyCodeCollection);
-        for (var i = 0; i < companies.length; i++){
-            if(companies[i].CompanyCode === uniqueCode){
+        for (var i = 0; i < companies.length; i++) {
+            if (companies[i].CompanyCode === uniqueCode) {
                 exist = true;
             }
         }
         return exist;
     }
-    function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode){
+    function assignRoles(userID, email, name, phoneNumber, companyName, uniqueCode, companyCode) {
         // Assign roles based on the role: Employee/Manager
         let data = {};
-        if (uniqueCode === ""){
+        if (uniqueCode === "") {
             data = {
                 UserID: userID,
                 UserEmail: email,
@@ -185,7 +203,7 @@ export function UserAuthContextProvider({ children }) {
         // Sign Up using Google email (seperate manager and employee role)
         console.log("Entered Sign Up (Google Email)");
         return onAuthStateChanged(auth, (user) => {
-            if(user){
+            if (user) {
                 const companyCode = companyCodeGenerator(companyName);
                 authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
                     addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
@@ -206,7 +224,7 @@ export function UserAuthContextProvider({ children }) {
                 if (users[i].UserID === user.uid) {
                     // It will return Exist to be true if the User ID exist in the userCollection
                     exist = true;
-                } 
+                }
             }
             return Promise.resolve(exist);
         });
@@ -226,7 +244,7 @@ export function UserAuthContextProvider({ children }) {
                 if (users[i].UserID === user.uid) {
                     // It will return Exist to be true if the User ID exist in the userCollection
                     exist = true;
-                } 
+                }
             }
             return Promise.resolve(exist);
         });
@@ -248,7 +266,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile }}>
             {children}
         </userAuthContext.Provider>
     );

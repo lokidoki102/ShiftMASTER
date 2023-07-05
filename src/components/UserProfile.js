@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useUserAuth } from "../context/UserAuthContext";
-import { useNavigate } from "react-router";
-import { Form } from "react-bootstrap";
+import { Form, Button } from "react-bootstrap";
 
 const UserProfile = () => {
-    const { user, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees } = useUserAuth();
+    const { user, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile } = useUserAuth();
     const [oneUser, setUsers] = useState([]);
     const [allEmployees, setEmployees] = useState([]);
-    const navigate = useNavigate();
+    const [name, setName] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("");
 
     useEffect(() => {
         const getUser = async () => {
@@ -21,6 +21,8 @@ const UserProfile = () => {
                 }
                 getAll();
             }
+            setName(oneUser.UserName);
+            setPhoneNumber(oneUser.UserPhoneNumber);
         }
         getUser();
 
@@ -81,16 +83,28 @@ const UserProfile = () => {
         }
     }
 
+    const handleUserUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            await updateUserProfile(user.uid, name, phoneNumber);
+            setTimeout(function () {
+                window.location.reload(true);
+            }, 2000);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     return (
         <>
             {(user && oneUser.Role === "Manager") &&
                 <><div class="container">
                     <div class="row">
-                        <div class="col-md-3"></div>
-                        <div class="col-md-6 text-center">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4 text-center">
                             <h3>User Profile</h3>
                             <p></p>
-                            <Form>
+                            <Form onSubmit={handleUserUpdate}>
                                 <Form.Group className="mb-3" controlId="formCompanyName">
                                     <Form.Control
                                         className="login-box"
@@ -123,7 +137,7 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="text"
                                         placeholder={"Username: " + oneUser.UserName}
-                                    //onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => setName(e.target.value)}
                                     />
                                 </Form.Group>
 
@@ -132,22 +146,26 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="tel"
                                         placeholder={"Phone Number: " + oneUser.UserPhoneNumber}
-                                        //onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
                                         pattern="[0-9]{4}-[0-9]{4}"
                                     />
                                 </Form.Group>
+
+                                <div className="d-grid gap-2">
+                                    <Button variant="secondary" type="Submit">
+                                        Update Profile
+                                    </Button>
+                                </div>
                             </Form>
                         </div>
                     </div>
                 </div>
-                    <p></p>
+                    <div id="spacing"></div>
                     <div class="container">
                         <div class="row">
-                            <div class="col-md-1"></div>
-                            <div class="col-md-10 text-center">
+                            <div class="col-md-12 text-center">
                                 <h3>List of Employees</h3>
                             </div>
-                            <p></p>
                             <div class="row">
                                 <div class="col-md-1"></div>
                                 <div class="col-md-10 text-center">
@@ -207,11 +225,15 @@ const UserProfile = () => {
                             </div>
                             <div class="row">
                                 <div class="col-md-1"></div>
-                                <div class="col-md-10">
+                                <div class="col-md-10 text-end">
                                     <p></p>
-                                    <button onClick={handleEmployeeSubmit}>Approve Pending Employee</button>
+                                    <Button variant="secondary" type="Submit" onClick={handleEmployeeSubmit}>
+                                        Approve Pending Employee
+                                    </Button>
                                     <p></p>
-                                    <button onClick={handleEmployeeDelete}>Delete Pending Employee</button>
+                                    <Button variant="secondary" type="Submit" onClick={handleEmployeeDelete}>
+                                        Delete Pending Employee
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -219,11 +241,11 @@ const UserProfile = () => {
             {(user && oneUser.Role === "Employee") &&
                 <><div class="container">
                     <div class="row">
-                        <div class="col-md-3"></div>
-                        <div class="col-md-6 text-center">
+                        <div class="col-md-4"></div>
+                        <div class="col-md-4 text-center">
                             <h3>User Profile</h3>
                             <p></p>
-                            <Form>
+                            <Form onSubmit={handleUserUpdate}>
                                 <Form.Group className="mb-3" controlId="formCompanyName">
                                     <Form.Control
                                         className="login-box"
@@ -265,7 +287,7 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="text"
                                         placeholder={"Username: " + oneUser.UserName}
-                                    //onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => setName(e.target.value)}
                                     />
                                 </Form.Group>
 
@@ -274,10 +296,16 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="tel"
                                         placeholder={"Phone Number: " + oneUser.UserPhoneNumber}
-                                        //onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
                                         pattern="[0-9]{4}-[0-9]{4}"
                                     />
                                 </Form.Group>
+
+                                <div className="d-grid gap-2">
+                                    <Button variant="secondary" type="Submit">
+                                        Update Profile
+                                    </Button>
+                                </div>
                             </Form>
                         </div>
                     </div>
