@@ -8,6 +8,8 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "bootstrap": "^5.3.0",
+    "bootstrap-icons": "^1.10.5",
+    "cdbreact": "^1.5.18",
     "firebase": "^9.22.1",
     "firestore": "^1.1.6",
     "rc-time-picker": "^3.7.3",

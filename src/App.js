@@ -8,47 +8,44 @@ import Signup from "./components/Signup";
 import MyCalendar from "./components/MyCalendar";
 import UserProfile from "./components/UserProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Sidebar from "./components/Navbar";
 import { UserAuthContextProvider } from "./context/UserAuthContext";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
     return (
-        <Container>
-            <Row>
-                <Col>
+        <>
+            <Container fluid >
+                <Row>
                     <UserAuthContextProvider>
-                        <Routes>
-                            <Route
-                                path="/home"
-                                element={
-                                    <ProtectedRoute>
+                        <Col xs={2}>
+                            <Sidebar />
+                        </Col>
+                        <Col xs={10} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <Routes>
+                                <Route
+                                    path="/home"
+                                    element={<ProtectedRoute>
                                         <Home />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route path="/" element={<Login />} />
-                            <Route path="/signup" element={<Signup />} />
-                            <Route
-                                path="/calendar"
-                                element={
-                                    <ProtectedRoute>
+                                    </ProtectedRoute>} />
+                                <Route path="/" element={<Login />} />
+                                <Route path="/signup" element={<Signup />} />
+                                <Route
+                                    path="/calendar"
+                                    element={<ProtectedRoute>
                                         <MyCalendar />
-                                    </ProtectedRoute>
-                                }
-                            />
-                            <Route
-                                path="/userprofile"
-                                element={
-                                    <ProtectedRoute>
+                                    </ProtectedRoute>} />
+                                <Route
+                                    path="/userprofile"
+                                    element={<ProtectedRoute>
                                         <UserProfile />
-                                    </ProtectedRoute>
-                                }
-                            />
-                        </Routes>
+                                    </ProtectedRoute>} />
+                            </Routes>
+                        </Col>
                     </UserAuthContextProvider>
-                </Col>
-            </Row>
-        </Container>
+                </Row>
+            </Container>
+        </>
     );
 }
 
