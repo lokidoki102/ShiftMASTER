@@ -69,10 +69,10 @@ const MyCalendar = () => {
   };
 
   useEffect(() => {
-    retrieveEvent(16, 16);
+    retrieveShift(16, 16);
   }, []);
 
-  const retrieveEvent = (min, max) => {
+  const retrieveShift = (min, max) => {
     const todayDate = new Date(); // Set the initial visible start date
     const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
     const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
@@ -169,7 +169,7 @@ const MyCalendar = () => {
     }
 
     if (view === "month") {
-      retrieveEvent(16, 16);
+      retrieveShift(16, 16);
       setCurrentView("month");
     }
 
@@ -221,14 +221,10 @@ const MyCalendar = () => {
   const createShift = async (newShift) => {
     try {
       handleClose();
-      console.log("before ref" + userID);
       // Reference to this user's document
       const userRef = doc(db, "users", userID);
-      console.log("after userref");
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = collection(userRef, "shifts");
-      console.log("after shiftscollectionref");
-      //   console.log("Event added with ID:", docRef.id);
 
       // Add new document to the shifts subcollection
       addDoc(shiftsCollectionRef, newShift)
@@ -239,8 +235,8 @@ const MyCalendar = () => {
           console.error("Error adding shift document:", error);
         });
 
-      // Refresh the events
-      retrieveEvent(1, 1);
+      // Refresh the shifts
+      retrieveShift(1, 1);
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -250,12 +246,18 @@ const MyCalendar = () => {
   const saveShift = async (updatedShift) => {
     try {
       handleClose();
+      // Reference to this user's document
+      const userRef = doc(db, "users", userID);
+      // Reference to this user's shifts subcollection
+      const shiftsCollectionRef = doc(
+        collection(userRef, "shifts"),
+        updatedShift.id
+      );
       // Update the shift in Firestore
-      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+      await updateDoc(shiftsCollectionRef, updatedShift);
 
-      useEffect(() => {
-        retrieveEvent(1, 1);
-      }, []);
+      // Refresh the shifts
+      retrieveShift(1, 1);
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -264,11 +266,19 @@ const MyCalendar = () => {
   const deleteShift = async (updatedShift) => {
     try {
       handleClose();
-
       updatedShift.isVisible = false; // Set isVisible to false
+      // Reference to this user's document
+      const userRef = doc(db, "users", userID);
+      // Reference to this user's shifts subcollection
+      const shiftsCollectionRef = doc(
+        collection(userRef, "shifts"),
+        updatedShift.id
+      );
+      // Update the shift in Firestore
+      await updateDoc(shiftsCollectionRef, updatedShift);
 
-      // Update shift in db
-      await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+      // Refresh the shifts
+      retrieveShift(1, 1);
     } catch (error) {
       console.error("Error deleting event:", error);
     }
