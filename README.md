@@ -3,7 +3,7 @@
 **Proposed Level of Achievement:** Gemini
 
 **Motivation:** <br>
-Our team aims to provide a solution that targets shift work companies, particularly startups with limited employees, who struggle to manage their shift schedules. The proposed system eliminates the need for outdated and error-prone Excel sheets, while providing an effective and affordable tool for both managers and employees.
+Our team aims to provide a solution that targets shift work companies, particularly startups with limited employees, who struggle to manage their shift schedules. The proposed system eliminates the need for outdated and error-prone Excel sheets while providing an effective and affordable tool for both managers and employees.
 
 **Aim:** <br>
 Our shift management system aims to simplify the process of creating and managing shift schedules. Managers can easily assign shifts, manage time-off requests, and make adjustments on the fly, while workers can suggest their preferred timings and view their shifts efficiently.
@@ -19,13 +19,16 @@ Our shift management system aims to simplify the process of creating and managin
 2. Overview of Employee Details
 3. Access Control
    - Manage Shift Schedules (Employees & Manager)
-   - Manage Employees Account (Manager)
+   - Manage Employees' Accounts (Manager)
 
 **Tech Stack:**
 1. Firebase (Database & Deploying)
 2. HTML, CSS (Frontend)
 3. React.js (Backend)
 4. Node.js (Backend)
+
+**Video:** <br>
+https://drive.google.com/file/d/1gI6eDnxmyt8zmBLo9Nw5NBNTkgcZXpNx/view?usp=share_link
 
 ## README
 *Project Log:*
@@ -34,7 +37,7 @@ Our shift management system aims to simplify the process of creating and managin
 
 *Milestone 1 Details:*
 1. Poster: https://drive.google.com/file/d/1nURMlJXmLrvwRrFUjR83fBjbur48NAvy/view?usp=share_link
-2. Video: https://drive.google.com/file/d/1gI6eDnxmyt8zmBLo9Nw5NBNTkgcZXpNx/view?usp=share_link
+2. Video: https://drive.google.com/file/d/10e0Wi_YkspNOz-JOoy4lZ_9c1lrpKaGD/view?usp=drive_link
 3. README: https://docs.google.com/document/d/1TNzD60LGKWApmxeVfdYmfpl8Q1LUnEcBwL5qBf1JlVU/edit?usp=sharing
 
 *Milestone 2 Details:*
