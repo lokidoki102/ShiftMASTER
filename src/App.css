@@ -2,6 +2,7 @@
 
 #root {
     width: 100%;
+    height: 100%;
 }
 
 body {
@@ -194,4 +195,13 @@ body {
 
 #spacing {
     padding: 25px;
+}
+
+#navbar {
+    display: flex;
+    height: 100%;
+    overflow: scroll initial;
+    min-height: 100vh;
+    position: relative;
+    right: 12px;
 }

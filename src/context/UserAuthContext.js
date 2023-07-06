@@ -17,6 +17,7 @@ const companyCodeCollection = collection(db, "companies");
 
 export function UserAuthContextProvider({ children }) {
     const [user, setUser] = useState({});
+    const [loading, setLoading] = useState(true); // loading state
 
     function companyCodeGenerator(companyName) {
         // Generate unique company codes upon signing up by the Manager and store company codes into companyCodeCollection
@@ -90,7 +91,6 @@ export function UserAuthContextProvider({ children }) {
                 data = doc.data();
                 newArray.push(data);
             });
-            console.log(newArray);
             return Promise.resolve(newArray);
         } catch (error) {
             console.log(error);
@@ -260,13 +260,14 @@ export function UserAuthContextProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, (currentuser) => {
             console.log("User: ", currentuser);
             setUser(currentuser);
+            setLoading(false);// Set loading to false when authentication state is resolved
         });
         return () => {
             unsubscribe();
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, loading }}>
             {children}
         </userAuthContext.Provider>
     );
