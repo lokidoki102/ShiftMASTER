@@ -30,6 +30,9 @@ Our shift management system aims to simplify the process of creating and managin
 **Video:** <br>
 https://drive.google.com/file/d/1gI6eDnxmyt8zmBLo9Nw5NBNTkgcZXpNx/view?usp=share_link
 
+**Website (Deployment):** <br>
+https://shiftmaster-cabd2.web.app/
+
 ## README
 *Project Log:*
 1. Google Sheet: https://docs.google.com/spreadsheets/d/1N7vW2JOtdgIZC79pUzuM6hPVVYtjbxIi0PtU9gHvR8M/edit?usp=drive_link
