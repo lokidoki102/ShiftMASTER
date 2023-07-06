@@ -145,7 +145,7 @@ const Signup = () => {
                                                 </div>
                                             </Form>
                                             <div className="mt-3 text-center sign-up-button primary-text">
-                                                Already have an account?<Link to="/" className="custom-link">Log In</Link>
+                                                Already have an account?<Link to="/" className="custom-link"> Login</Link>
                                             </div>
                                         </div>
                                     </div>
@@ -221,7 +221,7 @@ const Signup = () => {
                                                 </div>
                                             </Form>
                                             <div className="mt-3 text-center sign-up-button primary-text">
-                                                Already have an account?<Link to="/" className="custom-link">Log In</Link>
+                                                Already have an account?<Link to="/" className="custom-link"> Login</Link>
                                             </div>
                                         </div>
                                     </div>
