@@ -17,11 +17,11 @@ function App() {
         <>
             <Container fluid >
                 <Row>
-                    <Col xs={2}>
-                        <Sidebar />
-                    </Col>
-                    <Col xs={10} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <UserAuthContextProvider>
+                    <UserAuthContextProvider>
+                        <Col xs={2}>
+                            <Sidebar />
+                        </Col>
+                        <Col xs={10} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Routes>
                                 <Route
                                     path="/home"
@@ -41,8 +41,8 @@ function App() {
                                         <UserProfile />
                                     </ProtectedRoute>} />
                             </Routes>
-                        </UserAuthContextProvider>
-                    </Col>
+                        </Col>
+                    </UserAuthContextProvider>
                 </Row>
             </Container>
         </>
