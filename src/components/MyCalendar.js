@@ -33,6 +33,7 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const { user } = useUserAuth();
+  const [userID, setUserID] = useState("");
   const [shifts, setShifts] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
   const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
@@ -80,7 +81,6 @@ const MyCalendar = () => {
 
   //  Query for shifts
   const queryDatabase = useCallback((start, end) => {
-
     const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
@@ -88,11 +88,12 @@ const MyCalendar = () => {
 
       await Promise.all(
         querySnapshot.docs.map(async (doc) => {
+          setUserID(doc.id.toString());
           console.log("Document ID:", doc.id);
           console.log("Document data:", doc.data());
 
           // Retrieve the subcollection inside the document
-          const subcollectionRef = collection(doc.ref, "shift");
+          const subcollectionRef = collection(doc.ref, "shifts");
           const subcollectionQuery = query(
             subcollectionRef,
             where("UserID", "==", user.uid),
@@ -190,6 +191,7 @@ const MyCalendar = () => {
         start,
         end,
         isVisible: true,
+        UserID: user.uid,
       });
 
       setShowCreate(true);
@@ -206,6 +208,7 @@ const MyCalendar = () => {
       title: "New Shift",
       start,
       end,
+      UserID: user.uid,
     });
     // console.log(id);
 
@@ -218,13 +221,26 @@ const MyCalendar = () => {
   const createShift = async (newShift) => {
     try {
       handleClose();
-      // Add the new event to Firestore
-      const docRef = await addDoc(collection(db, "shift"), newShift);
+      console.log("before ref" + userID);
+      // Reference to this user's document
+      const userRef = doc(db, "users", userID);
+      console.log("after userref");
+      // Reference to this user's shifts subcollection
+      const shiftsCollectionRef = collection(userRef, "shifts");
+      console.log("after shiftscollectionref");
       //   console.log("Event added with ID:", docRef.id);
 
-      useEffect(() => {
-        retrieveEvent(1, 1);
-      }, []);
+      // Add new document to the shifts subcollection
+      addDoc(shiftsCollectionRef, newShift)
+        .then((docRef) => {
+          console.log("New shift document ID:", docRef.id);
+        })
+        .catch((error) => {
+          console.error("Error adding shift document:", error);
+        });
+
+      // Refresh the events
+      retrieveEvent(1, 1);
     } catch (error) {
       console.error("Error adding event:", error);
     }
