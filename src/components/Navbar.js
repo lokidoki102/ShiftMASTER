@@ -46,8 +46,8 @@ const Sidebar = () => {
                         </CDBSidebarMenu>
                     </CDBSidebarContent>
 
-                    <CDBSidebarFooter style={{ textAlign: 'center', padding: '10px'}}>
-                        <Button variant="primary" onClick={handleLogout} style={{ textAlign: 'center', padding: '8px'}}>
+                    <CDBSidebarFooter style={{ textAlign: 'center', padding: '10px' }}>
+                        <Button variant="primary" onClick={handleLogout} style={{ textAlign: 'center', padding: '8px' }}>
                             Sign Out
                         </Button>
                     </CDBSidebarFooter>
