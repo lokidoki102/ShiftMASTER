@@ -26,15 +26,6 @@ const Home = () => {
                             {user && user.email}
                         </div>
                     </div>
-                    <div class="d-flex justify-content-center">
-                        <div className="d-grid gap-2">
-                            <Button variant="primary" onClick={handleLogout}>
-                                Log out
-                            </Button>
-                            <Link to="/calendar">Calendar</Link>
-                            <Link to="/userprofile">User Profile</Link>
-                        </div>
-                    </div>
                 </div>
             </div>
         </>

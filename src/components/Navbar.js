@@ -5,8 +5,7 @@ import {
     CDBSidebarFooter,
     CDBSidebarHeader,
     CDBSidebarMenu,
-    CDBSidebarMenuItem,
-    CDBIcon
+    CDBSidebarMenuItem
 } from 'cdbreact';
 import { NavLink } from 'react-router-dom';
 import { Button } from "react-bootstrap";
@@ -48,8 +47,8 @@ const Sidebar = () => {
                     </CDBSidebarContent>
 
                     <CDBSidebarFooter style={{ textAlign: 'center', padding: '10px'}}>
-                        <Button variant="primary" onClick={handleLogout}>
-                            Log out
+                        <Button variant="primary" onClick={handleLogout} style={{ textAlign: 'center', padding: '8px'}}>
+                            Sign Out
                         </Button>
                     </CDBSidebarFooter>
                 </CDBSidebar>
