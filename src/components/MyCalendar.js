@@ -4,7 +4,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-import { useRef } from "react";
 import {
   collection,
   query,
@@ -19,7 +18,6 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
-import TimePicker from "rc-time-picker";
 import "rc-time-picker/assets/index.css";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
@@ -27,6 +25,9 @@ import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
 import "../App.css";
 import { useUserAuth } from "../context/UserAuthContext";
+import Toast from "react-bootstrap/Toast";
+import ToastContainer from 'react-bootstrap/ToastContainer';
+
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
@@ -34,6 +35,7 @@ const localizer = momentLocalizer(moment);
 const MyCalendar = () => {
   const { user } = useUserAuth();
   const [userID, setUserID] = useState("");
+  const [isApproved, setIsApproved] = useState("");
   const [shifts, setShifts] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
   const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
@@ -42,15 +44,18 @@ const MyCalendar = () => {
   const [currentView, setCurrentView] = useState("");
 
   // Modal
-  const [show, setShow] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [showDelete, setShowDelete] = useState(false); // for delete button
   const [showCreate, setShowCreate] = useState(false); // for create button
   const handleClose = () => {
-    setShow(false);
+    setShowModal(false);
     setShowDelete(false);
     setShowCreate(false);
   };
-  const handleShow = () => setShow(true);
+  const handleShow = () => setShowModal(true);
+
+  // Toast
+  const [showToast, setShowToast] = useState(false);
 
   // time picker
   const onChangeStart = (date) => {
@@ -91,9 +96,12 @@ const MyCalendar = () => {
           setUserID(doc.id.toString());
           console.log("Document ID:", doc.id);
           console.log("Document data:", doc.data());
+          const isApproved = doc.data().Status.toString(); // retrieve status
+          setIsApproved(isApproved);
 
           // Retrieve the subcollection inside the document
           const subcollectionRef = collection(doc.ref, "shifts");
+
           const subcollectionQuery = query(
             subcollectionRef,
             where("UserID", "==", user.uid),
@@ -180,6 +188,13 @@ const MyCalendar = () => {
 
   // triggered when slot/s from day/week view is selected
   const onSelectSlot = async ({ id, start, end }) => {
+    // if user is not approved, show warning
+    if (isApproved == "Not Approved") {
+      // show a warning message
+      console.log("Not approved... showing warning now");
+      setShowToast(true);
+      return;
+    }
     if (currentView == "day" || currentView == "week") {
       //TODO title should be the person's name
       setStart(start);
@@ -309,7 +324,7 @@ const MyCalendar = () => {
       />
 
       <Modal
-        show={show}
+        show={showModal}
         onHide={handleClose}
         size="lg"
         aria-labelledby="contained-modal-title-vcenter"
@@ -350,6 +365,26 @@ const MyCalendar = () => {
           </Modal.Footer>
         )}
       </Modal>
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+        <Toast
+          onClose={() => setShowToast(false)}
+          show={showToast}
+          delay={6000}
+          autohide
+        >
+          <Toast.Header className="bg-danger text-white">
+            <img
+              src="holder.js/20x20?text=%20"
+              className="rounded me-2"
+              alt=""
+            />
+            <strong className="me-auto">Warning</strong>
+          </Toast.Header>
+          <Toast.Body className="bg-danger text-white">
+            Please wait until you're approved by your manager.
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }; // end of MyCalendar
