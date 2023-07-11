@@ -83,7 +83,7 @@ const Login = () => {
 
                                 <div className="d-grid gap-2">
                                     <Button variant="primary" type="Submit">
-                                        Log in
+                                        Login
                                     </Button>
                                 </div>
                             </Form>
@@ -93,7 +93,7 @@ const Login = () => {
                                     className="g-btn custom-google-button login-box primary-text"
                                     type="dark"
                                     onClick={handleGoogleSignIn}
-                                    disabled={disabled}
+                                    //disabled={disabled}
                                 />
                             </div>
                             <div className="mt-3 text-center sign-up-button primary-text">

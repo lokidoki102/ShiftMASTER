@@ -235,20 +235,23 @@ export function UserAuthContextProvider({ children }) {
         const googleAuthProvider = new GoogleAuthProvider();
         // Exist will always be false if the User ID does not exist in the userCollection
         let exist = false;
-        // Sign In with Pop Up Issue:(https://www.reddit.com/r/Firebase/comments/q3u9ta/signinwithpopup_works_sometimes_and_sometimes_it/)
-        return signInWithPopup(auth, googleAuthProvider).then(async (result) => {
-            console.log("Entered with Google Pop Up");
-            const user = result.user;
-            // This method is to check whether the Google Email exist within ShiftMaster FireBase
-            let users = await getCodeCollection(userCollection);
-            for (var i = 0; i < users.length; i++) {
-                if (users[i].UserID === user.uid) {
-                    // It will return Exist to be true if the User ID exist in the userCollection
-                    exist = true;
+        try {
+            return await signInWithPopup(auth, googleAuthProvider).then(async (result) => {
+                console.log("Entered with Google Pop Up");
+                const user = result.user;
+                // This method is to check whether the Google Email exist within ShiftMaster FireBase
+                let users = await getCodeCollection(userCollection);
+                for (var i = 0; i < users.length; i++) {
+                    if (users[i].UserID === user.uid) {
+                        // It will return Exist to be true if the User ID exist in the userCollection
+                        exist = true;
+                    }
                 }
-            }
-            return Promise.resolve(exist);
-        });
+                return Promise.resolve(exist);
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
     function logOut() {
         // Remove User Current Session (When Press Log Out or Back Button)
