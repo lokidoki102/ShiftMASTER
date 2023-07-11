@@ -42,7 +42,7 @@ const ProtectedRoute = ({ children }) => {
         },
     };
     const loadingCircleTransition = {
-        duration: 0.4,
+        duration: 0.3,
         yoyo: Infinity,
         ease: 'easeInOut'
     }

@@ -27,7 +27,7 @@ const Sidebar = () => {
     return (
         <>
             <div id="navbar">
-                <CDBSidebar textColor="white" backgroundColor="#2F2E2E">
+                <CDBSidebar textColor="white" backgroundColor="#2F2E2E" toggled="false">
                     <CDBSidebarHeader prefix={<i className="fa fa-bars fa-large"></i>}>
                         ShiftMASTER
                     </CDBSidebarHeader>

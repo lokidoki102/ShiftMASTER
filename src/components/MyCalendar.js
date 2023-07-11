@@ -26,8 +26,7 @@ import "react-clock/dist/Clock.css";
 import "../App.css";
 import { useUserAuth } from "../context/UserAuthContext";
 import Toast from "react-bootstrap/Toast";
-import ToastContainer from 'react-bootstrap/ToastContainer';
-
+import ToastContainer from "react-bootstrap/ToastContainer";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
@@ -36,6 +35,7 @@ const MyCalendar = () => {
     const { user } = useUserAuth();
     const [userID, setUserID] = useState("");
     const [isApproved, setIsApproved] = useState("");
+    const [role, setRole] = useState("");
     const [shifts, setShifts] = useState([]);
     const [start, setStart] = useState(new Date()); // the start datetime of the new shift
     const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
@@ -81,15 +81,18 @@ const MyCalendar = () => {
         const todayDate = new Date(); // Set the initial visible start date
         const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
         const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
-        queryDatabase(initialStartDate, initialEndDate);
+
+        queryShifts(initialStartDate, initialEndDate);
     };
 
     //  Query for shifts
-    const queryDatabase = useCallback((start, end) => {
+    const queryShifts = useCallback((start, end) => {
         const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
         const unsubscribe = onSnapshot(q, async (querySnapshot) => {
             const fetchedShifts = [];
+
+            // Manager: show all shifts available in the company
 
             await Promise.all(
                 querySnapshot.docs.map(async (doc) => {
@@ -98,18 +101,42 @@ const MyCalendar = () => {
                     console.log("Document data:", doc.data());
                     const isApproved = doc.data().Status.toString(); // retrieve status
                     setIsApproved(isApproved);
+                    const role = doc.data().Role.toString();
+                    setRole(role);
+                    const companyCode = doc.data().CompanyCode.toString();
+                    let subcollectionRef = null;
+                    let subcollectionQuery = null;
+                    // Employee: Show only his/her own shifts
+                    if (role == "Employee") {
+                        subcollectionRef = collection(doc.ref, "shifts");
 
-                    // Retrieve the subcollection inside the document
-                    const subcollectionRef = collection(doc.ref, "shifts");
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", user.uid),
+                            where("start", ">=", start),
+                            where("start", "<", end),
+                            where("isVisible", "==", true),
+                            orderBy("start")
+                        );
+                    }
+                    // Manager: Show all the shifts under the company
+                    else if (role == "Manager") {
+                        //TODO show all shifts
+                        subcollectionRef = collectionGroup(db, "shifts");
 
-                    const subcollectionQuery = query(
-                        subcollectionRef,
-                        where("UserID", "==", user.uid),
-                        where("start", ">=", start),
-                        where("start", "<", end),
-                        where("isVisible", "==", true),
-                        orderBy("start")
-                    );
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("start", ">=", start),
+                            where("start", "<", end),
+                            where("isVisible", "==", true),
+                            where("CompanyCode", "==", companyCode),
+                            orderBy("start")
+                        );
+                    } else {
+                        console.log("Role not found");
+                        return;
+                    }
+
                     const subcollectionSnapshot = await getDocs(subcollectionQuery);
 
                     subcollectionSnapshot.forEach((subdoc) => {
@@ -189,7 +216,7 @@ const MyCalendar = () => {
     // triggered when slot/s from day/week view is selected
     const onSelectSlot = async ({ id, start, end }) => {
         // if user is not approved, show warning
-        if (isApproved == "Not Approved") {
+        if (role == "Employee" && isApproved == "Not Approved") {
             // show a warning message
             console.log("Not approved... showing warning now");
             setShowToast(true);
