@@ -51,6 +51,4 @@ https://shiftmaster-cabd2.web.app/
 *Milestone 3 Details:*
 1. Poster: 
 2. Video: 
-3. README:
-
-## Set Up Instructions
+3. README: https://docs.google.com/document/d/1DQo2d7jPjQR2LaWJ6WdAjNQhQ0TDjtPi2muQw_IdtY0/edit?usp=sharing
