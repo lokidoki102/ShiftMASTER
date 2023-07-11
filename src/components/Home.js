@@ -1,20 +1,8 @@
 import React from "react";
-import { Button } from "react-bootstrap";
-import { useNavigate } from "react-router";
-import { Link } from "react-router-dom";
 import { useUserAuth } from "../context/UserAuthContext";
 
 const Home = () => {
-    const { logOut, user } = useUserAuth();
-    const navigate = useNavigate();
-    const handleLogout = async () => {
-        try {
-            logOut();
-            navigate("/");
-        } catch (error) {
-            console.log(error.message);
-        }
-    };
+    const { user } = useUserAuth();
 
     return (
         <>

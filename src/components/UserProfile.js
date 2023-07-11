@@ -14,7 +14,7 @@ const UserProfile = () => {
         const getUser = async () => {
             const oneUser = await getUserProfile(user.uid);
             setUsers(oneUser);
-            if (oneUser.CompanyCode !== undefined) {
+            if (oneUser.Role === "Manager") {
                 const getAll = async () => {
                     const allEmployees = await getAllEmployees(oneUser.CompanyCode);
                     setEmployees(allEmployees);
@@ -35,7 +35,7 @@ const UserProfile = () => {
                         CompanyName: d.CompanyName,
                         Role: d.Role,
                         Status: d.Status,
-                        UniqueCode: d.UniqueCode,
+                        CompanyCode: d.CompanyCode,
                         UserEmail: d.UserEmail,
                         UserID: d.UserID,
                         UserName: d.UserName,
@@ -48,7 +48,7 @@ const UserProfile = () => {
                         CompanyName: d.CompanyName,
                         Role: d.Role,
                         Status: d.Status,
-                        UniqueCode: d.UniqueCode,
+                        CompanyCode: d.CompanyCode,
                         UserEmail: d.UserEmail,
                         UserID: d.UserID,
                         UserName: d.UserName,
@@ -65,7 +65,7 @@ const UserProfile = () => {
             await approveEmployees(allEmployees);
             setTimeout(function () {
                 window.location.reload(true);
-            }, 2000);
+            }, 3000);
         } catch (error) {
             console.log(error);
         }
@@ -77,7 +77,7 @@ const UserProfile = () => {
             await deleteEmployees(allEmployees);
             setTimeout(function () {
                 window.location.reload(true);
-            }, 2000);
+            }, 3000);
         } catch (error) {
             console.log(error);
         }
@@ -89,7 +89,7 @@ const UserProfile = () => {
             await updateUserProfile(user.uid, name, phoneNumber);
             setTimeout(function () {
                 window.location.reload(true);
-            }, 2000);
+            }, 3000);
         } catch (error) {
             console.log(error);
         }
@@ -110,6 +110,15 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="text"
                                         placeholder={"Company Name: " + oneUser.CompanyName}
+                                        disabled
+                                    />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3" controlId="formCompanyCode">
+                                    <Form.Control
+                                        className="login-box"
+                                        type="text"
+                                        placeholder={"Company Code: " + oneUser.CompanyCode}
                                         disabled
                                     />
                                 </Form.Group>

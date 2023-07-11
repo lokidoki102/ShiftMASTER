@@ -84,7 +84,7 @@ export function UserAuthContextProvider({ children }) {
         // Get All Employees and Display in Manager Profile
         let data;
         let newArray = [];
-        const docRef = query(userCollection, where("UniqueCode", "==", companyCode));
+        const docRef = query(userCollection, where("CompanyCode", "==", companyCode), where("Role", "==", "Employee"));
         try {
             const docSnap = await getDocs(docRef);
             docSnap.forEach((doc) => {
@@ -101,7 +101,7 @@ export function UserAuthContextProvider({ children }) {
         try {
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Approval") {
-                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
                         const newRef = doc(db, "users", oneDoc.id);
@@ -120,7 +120,7 @@ export function UserAuthContextProvider({ children }) {
         try {
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Deletion") {
-                    const docRef = query(userCollection, where("UniqueCode", "==", allEmployees[i].UniqueCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
                         const newRef = doc(db, "users", oneDoc.id);
@@ -171,6 +171,7 @@ export function UserAuthContextProvider({ children }) {
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
                 CompanyCode: companyCode,
+                Status: "Approved",
                 Role: "Manager"
             }
         } else {
@@ -180,7 +181,7 @@ export function UserAuthContextProvider({ children }) {
                 UserName: name,
                 UserPhoneNumber: phoneNumber,
                 CompanyName: companyName,
-                UniqueCode: uniqueCode,
+                CompanyCode: uniqueCode,
                 Status: "Not Approved",
                 Role: "Employee"
             }
