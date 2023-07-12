@@ -352,7 +352,7 @@ const UserProfile = () => {
                 <Toast
                     onClose={() => setShowApproved(false)}
                     show={showApproved}
-                    delay={4000}
+                    delay={5000}
                     autohide>
                     <Toast.Body className="bg-warning text-black">
                         You have not selected any employees for approval.
@@ -361,7 +361,7 @@ const UserProfile = () => {
                 <Toast
                     onClose={() => setShowDelete(false)}
                     show={showDelete}
-                    delay={4000}
+                    delay={5000}
                     autohide>
                     <Toast.Body className="bg-warning text-black">
                         You have not selected any employees for deletion.
