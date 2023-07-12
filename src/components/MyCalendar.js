@@ -85,7 +85,7 @@ const MyCalendar = () => {
     queryShifts(initialStartDate, initialEndDate);
   };
 
-  //  Query for shifts
+  // Query for shifts
   const queryShifts = useCallback((start, end) => {
     const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
@@ -103,7 +103,7 @@ const MyCalendar = () => {
           setIsApproved(isApproved);
           const role = doc.data().Role.toString();
           setRole(role);
-          const companyCode = doc.data().CompanyCode.toString();
+          const uniqueCode = doc.data().UniqueCode.toString();
           let subcollectionRef = null;
           let subcollectionQuery = null;
           // Employee: Show only his/her own shifts
@@ -111,13 +111,13 @@ const MyCalendar = () => {
             subcollectionRef = collection(doc.ref, "shifts");
 
             subcollectionQuery = query(
-                subcollectionRef,
-                where("UserID", "==", user.uid),
-                where("start", ">=", start),
-                where("start", "<", end),
-                where("isVisible", "==", true),
-                orderBy("start")
-              );
+              subcollectionRef,
+              where("UserID", "==", user.uid),
+              where("start", ">=", start),
+              where("start", "<", end),
+              where("isVisible", "==", true),
+              orderBy("start")
+            );
           }
           // Manager: Show all the shifts under the company
           else if (role == "Manager") {
@@ -125,13 +125,15 @@ const MyCalendar = () => {
             subcollectionRef = collectionGroup(db, "shifts");
 
             subcollectionQuery = query(
-                subcollectionRef,
-                where("start", ">=", start),
-                where("start", "<", end),
-                where("isVisible", "==", true),
-                where("CompanyCode", "==", companyCode),
-                orderBy("start")
-              );
+              subcollectionRef,
+              where("start", ">=", start),
+              where("start", "<", end),
+              where("isVisible", "==", true),
+              where("UniqueCode", "==", uniqueCode),
+              orderBy("start")
+            );
+
+            queryEmployees(uniqueCode);
           } else {
             console.log("Role not found");
             return;
@@ -158,6 +160,29 @@ const MyCalendar = () => {
     });
     return () => unsubscribe();
   }, []);
+
+
+    // Query for getting employee names
+    const queryEmployees = async (uniqueCode) => {
+        const fetchedEmployees = [];
+        const q = query(
+          collection(db, "users"),
+          where("UniqueCode", "==", uniqueCode)
+        );
+    
+        try {
+          const querySnapshot = await getDocs(q);
+          querySnapshot.forEach((doc) => {
+            const employee = {
+                id: doc.id,
+                name: doc.data().UserName,
+            };
+            fetchedEmployees.push(employee);
+          });
+        } catch (error) {
+          console.error("Error querying employees:", error);
+        }
+      };
 
   // event handlers for calendar
   const onEventDrop = (data) => {
@@ -219,6 +244,7 @@ const MyCalendar = () => {
     // if user is not approved, show warning
     if (role == "Employee" && isApproved == "Not Approved") {
       // show a warning message
+      console.log(isApproved);
       console.log("Not approved... showing warning now");
       setShowToast(true);
       return;
