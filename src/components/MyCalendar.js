@@ -146,6 +146,7 @@ const MyCalendar = () => {
               title: shiftData.title,
               start: shiftData.start.toDate(),
               end: shiftData.end.toDate(),
+              isConfirmed: shiftData.isConfirmed,
             });
 
             console.log("Subdocument ID:", subdoc.id);
@@ -234,6 +235,7 @@ const MyCalendar = () => {
         end,
         isVisible: true,
         UserID: user.uid,
+        isConfirmed: false, // by default should be false as the manager has to approve it first
       });
 
       setShowCreate(true);
@@ -241,7 +243,9 @@ const MyCalendar = () => {
   };
 
   // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end }) => {
+  const onSelectEvent = ({ id, start, end, isConfirmed }) => {
+    console.log("(onSelectEvent)ID: " + id);
+    console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
     // store selected event's start and end times
     setStart(start);
     setEnd(end);
@@ -251,6 +255,7 @@ const MyCalendar = () => {
       start,
       end,
       UserID: user.uid,
+      isConfirmed,
     });
     // console.log(id);
 
