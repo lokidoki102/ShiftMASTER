@@ -19,7 +19,6 @@ const Signup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-        console.log(user);
         let exist = await validation(uniqueCode);
         try {
             if (exist === true) {
@@ -40,7 +39,8 @@ const Signup = () => {
                 navigate("/signup");
             }
         } catch (err) {
-            setError(err.message); setUniqueCode(""); setCompanyName("");
+            console.log(err);
+            setError("There is an error creating your account. Please try again!"); setUniqueCode(""); setCompanyName("");
             e.target.reset();
         }
     };

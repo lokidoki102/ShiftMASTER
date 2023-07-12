@@ -11,7 +11,6 @@ const Login = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const { logIn, googleSignIn } = useUserAuth();
-    const [disabled, setDisabled] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -35,7 +34,6 @@ const Login = () => {
 
     const handleGoogleSignIn = async (e) => {
         e.preventDefault();
-        setDisabled(true);
         try {
             googleSignIn().then((result) => {
                 if (result === false) {
@@ -93,7 +91,6 @@ const Login = () => {
                                     className="g-btn custom-google-button login-box primary-text"
                                     type="dark"
                                     onClick={handleGoogleSignIn}
-                                    //disabled={disabled}
                                 />
                             </div>
                             <div className="mt-3 text-center sign-up-button primary-text">

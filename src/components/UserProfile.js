@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useUserAuth } from "../context/UserAuthContext";
 import { Form, Button } from "react-bootstrap";
+import Toast from "react-bootstrap/Toast";
+import ToastContainer from "react-bootstrap/ToastContainer";
 
 const UserProfile = () => {
     const { user, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile } = useUserAuth();
@@ -9,6 +11,10 @@ const UserProfile = () => {
     const [allEmployees, setEmployees] = useState([]);
     const [name, setName] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
+    const [messageName, setMessageName] = useState('');
+    const [messagePhone, setMessagePhone] = useState('');
+    const [showApproved, setShowApproved] = useState(false);
+    const [showDelete, setShowDelete] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
@@ -62,10 +68,20 @@ const UserProfile = () => {
     const handleEmployeeSubmit = async (e) => {
         e.preventDefault();
         try {
-            await approveEmployees(allEmployees);
-            setTimeout(function () {
-                window.location.reload(true);
-            }, 3000);
+            let buttonResult = false;
+            for (let i = 0; i < allEmployees.length; i++) {
+                if (allEmployees[i].Status === "Pending Approval") {
+                    buttonResult = true;
+                }
+            }
+            if (buttonResult === true) {
+                await approveEmployees(allEmployees);
+                setTimeout(function () {
+                    window.location.reload(true);
+                }, 3000);
+            } else {
+                setShowApproved(true);
+            }
         } catch (error) {
             console.log(error);
         }
@@ -74,10 +90,20 @@ const UserProfile = () => {
     const handleEmployeeDelete = async (e) => {
         e.preventDefault();
         try {
-            await deleteEmployees(allEmployees);
-            setTimeout(function () {
-                window.location.reload(true);
-            }, 3000);
+            let buttonResult = false;
+            for (let i = 0; i < allEmployees.length; i++) {
+                if (allEmployees[i].Status === "Pending Deletion") {
+                    buttonResult = true;
+                }
+            }
+            if (buttonResult === true) {
+                await deleteEmployees(allEmployees);
+                setTimeout(function () {
+                    window.location.reload(true);
+                }, 3000);
+            } else {
+                setShowDelete(true);
+            }
         } catch (error) {
             console.log(error);
         }
@@ -102,7 +128,7 @@ const UserProfile = () => {
                     <div class="row">
                         <div class="col-md-4"></div>
                         <div class="col-md-4 text-center">
-                            <h3>User Profile</h3>
+                            <h3 class="headers">User Profile</h3>
                             <p></p>
                             <Form onSubmit={handleUserUpdate}>
                                 <Form.Group className="mb-3" controlId="formCompanyName">
@@ -146,7 +172,7 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="text"
                                         placeholder={"Username: " + oneUser.UserName}
-                                        onChange={(e) => setName(e.target.value)}
+                                        onChange={(e) => { setName(e.target.value); setMessageName(e.target.value) }}
                                     />
                                 </Form.Group>
 
@@ -155,13 +181,13 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="tel"
                                         placeholder={"Phone Number: " + oneUser.UserPhoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => { setPhoneNumber(e.target.value); setMessagePhone(e.target.value) }}
                                         pattern="[0-9]{4}-[0-9]{4}"
                                     />
                                 </Form.Group>
 
                                 <div className="d-grid gap-2">
-                                    <Button variant="secondary" type="Submit">
+                                    <Button variant="secondary" type="Submit" disabled={messageName.length === 0 && messagePhone.length === 0}>
                                         Update Profile
                                     </Button>
                                 </div>
@@ -172,7 +198,7 @@ const UserProfile = () => {
                     <div id="spacing"></div>
                     <div class="row">
                         <div class="col-md-12 text-center">
-                            <h3>List of Employees</h3>
+                            <h3 class="headers">List of Employees</h3>
                         </div>
                         <div class="row">
                             <div class="col-md-1"></div>
@@ -254,7 +280,7 @@ const UserProfile = () => {
                     <div class="row">
                         <div class="col-md-4"></div>
                         <div class="col-md-4 text-center">
-                            <h3>User Profile</h3>
+                            <h3 class="headers">User Profile</h3>
                             <p></p>
                             <Form onSubmit={handleUserUpdate}>
                                 <Form.Group className="mb-3" controlId="formCompanyName">
@@ -298,7 +324,7 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="text"
                                         placeholder={"Username: " + oneUser.UserName}
-                                        onChange={(e) => setName(e.target.value)}
+                                        onChange={(e) => { setName(e.target.value); setMessageName(e.target.value) }}
                                     />
                                 </Form.Group>
 
@@ -307,13 +333,13 @@ const UserProfile = () => {
                                         className="login-box"
                                         type="tel"
                                         placeholder={"Phone Number: " + oneUser.UserPhoneNumber}
-                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        onChange={(e) => { setPhoneNumber(e.target.value); setMessagePhone(e.target.value) }}
                                         pattern="[0-9]{4}-[0-9]{4}"
                                     />
                                 </Form.Group>
 
                                 <div className="d-grid gap-2">
-                                    <Button variant="secondary" type="Submit">
+                                    <Button variant="secondary" type="Submit" disabled={messageName.length === 0 && messagePhone.length === 0}>
                                         Update Profile
                                     </Button>
                                 </div>
@@ -322,6 +348,26 @@ const UserProfile = () => {
                     </div>
                 </div>
                 </>}
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+                <Toast
+                    onClose={() => setShowApproved(false)}
+                    show={showApproved}
+                    delay={4000}
+                    autohide>
+                    <Toast.Body className="bg-warning text-black">
+                        You have not selected any employees for approval.
+                    </Toast.Body>
+                </Toast>
+                <Toast
+                    onClose={() => setShowDelete(false)}
+                    show={showDelete}
+                    delay={4000}
+                    autohide>
+                    <Toast.Body className="bg-warning text-black">
+                        You have not selected any employees for deletion.
+                    </Toast.Body>
+                </Toast>
+            </ToastContainer>
         </>
     );
 }
