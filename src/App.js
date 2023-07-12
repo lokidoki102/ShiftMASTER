@@ -15,7 +15,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
     return (
         <>
-            <Container fluid >
+            <Container fluid>
                 <Row>
                     <UserAuthContextProvider>
                         <Col xs={2}>

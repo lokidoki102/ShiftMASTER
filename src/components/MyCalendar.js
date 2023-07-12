@@ -4,7 +4,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
 import withDragAndDrop from "react-big-calendar/lib/addons/dragAndDrop";
 import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-import { useRef } from "react";
 import {
     collection,
     query,
@@ -14,22 +13,30 @@ import {
     addDoc,
     updateDoc,
     doc,
+    collectionGroup,
+    getDocs,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
-import TimePicker from "rc-time-picker";
 import "rc-time-picker/assets/index.css";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
 import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
 import "../App.css";
+import { useUserAuth } from "../context/UserAuthContext";
+import Toast from "react-bootstrap/Toast";
+import ToastContainer from "react-bootstrap/ToastContainer";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
-    const [events, setEvents] = useState([]);
+    const { user } = useUserAuth();
+    const [userID, setUserID] = useState("");
+    const [isApproved, setIsApproved] = useState("");
+    const [role, setRole] = useState("");
+    const [shifts, setShifts] = useState([]);
     const [start, setStart] = useState(new Date()); // the start datetime of the new shift
     const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
     const [newShift, setNewShift] = useState([]); // the new shift created
@@ -37,15 +44,18 @@ const MyCalendar = () => {
     const [currentView, setCurrentView] = useState("");
 
     // Modal
-    const [show, setShow] = useState(false);
+    const [showModal, setShowModal] = useState(false);
     const [showDelete, setShowDelete] = useState(false); // for delete button
     const [showCreate, setShowCreate] = useState(false); // for create button
     const handleClose = () => {
-        setShow(false);
+        setShowModal(false);
         setShowDelete(false);
         setShowCreate(false);
     };
-    const handleShow = () => setShow(true);
+    const handleShow = () => setShowModal(true);
+
+    // Toast
+    const [showToast, setShowToast] = useState(false);
 
     // time picker
     const onChangeStart = (date) => {
@@ -64,42 +74,87 @@ const MyCalendar = () => {
     };
 
     useEffect(() => {
-        retrieveEvent(16, 16);
+        retrieveShift(16, 16);
     }, []);
 
-    const retrieveEvent = (min, max) => {
+    const retrieveShift = (min, max) => {
         const todayDate = new Date(); // Set the initial visible start date
         const initialStartDate = moment(todayDate).subtract(min, "days").toDate(); // Show 31 days
         const initialEndDate = moment(todayDate).add(max, "days").toDate(); // Show 31 days
-        queryDatebase(initialStartDate, initialEndDate);
+
+        queryShifts(initialStartDate, initialEndDate);
     };
 
     //  Query for shifts
-    const queryDatebase = useCallback((start, end) => {
-        const eventsRef = collection(db, "shift");
-        const q = query(
-            eventsRef,
-            where("start", ">=", start),
-            where("start", "<", end),
-            where("isVisible", "==", true),
-            orderBy("start")
-        );
+    const queryShifts = useCallback((start, end) => {
+        const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const fetchedEvents = [];
-            querySnapshot.forEach((doc) => {
-                const eventData = doc.data();
-                fetchedEvents.push({
-                    id: doc.id,
-                    title: eventData.title,
-                    start: eventData.start.toDate(),
-                    end: eventData.end.toDate(),
-                });
-            });
+        const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+            const fetchedShifts = [];
 
-            setEvents(fetchedEvents);
+            // Manager: show all shifts available in the company
+
+            await Promise.all(
+                querySnapshot.docs.map(async (doc) => {
+                    setUserID(doc.id.toString());
+                    console.log("Document ID:", doc.id);
+                    console.log("Document data:", doc.data());
+                    const isApproved = doc.data().Status.toString(); // retrieve status
+                    setIsApproved(isApproved);
+                    const role = doc.data().Role.toString();
+                    setRole(role);
+                    const companyCode = doc.data().CompanyCode.toString();
+                    let subcollectionRef = null;
+                    let subcollectionQuery = null;
+                    // Employee: Show only his/her own shifts
+                    if (role == "Employee") {
+                        subcollectionRef = collection(doc.ref, "shifts");
+
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", user.uid),
+                            where("start", ">=", start),
+                            where("start", "<", end),
+                            where("isVisible", "==", true),
+                            orderBy("start")
+                        );
+                    }
+                    // Manager: Show all the shifts under the company
+                    else if (role == "Manager") {
+                        //TODO show all shifts
+                        subcollectionRef = collectionGroup(db, "shifts");
+
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("start", ">=", start),
+                            where("start", "<", end),
+                            where("isVisible", "==", true),
+                            where("CompanyCode", "==", companyCode),
+                            orderBy("start")
+                        );
+                    } else {
+                        console.log("Role not found");
+                        return;
+                    }
+
+                    const subcollectionSnapshot = await getDocs(subcollectionQuery);
+
+                    subcollectionSnapshot.forEach((subdoc) => {
+                        const shiftData = subdoc.data();
+                        fetchedShifts.push({
+                            id: subdoc.id,
+                            title: shiftData.title,
+                            start: shiftData.start.toDate(),
+                            end: shiftData.end.toDate(),
+                        });
+
+                        console.log("Subdocument ID:", subdoc.id);
+                        console.log("Subdocument data:", subdoc.data());
+                    });
+                })
+            );
+            setShifts(fetchedShifts);
         });
-
         return () => unsubscribe();
     }, []);
 
@@ -108,26 +163,26 @@ const MyCalendar = () => {
         const { start, end } = data;
         const updatedEvents = [
             {
-                ...events[0],
+                ...shifts[0],
                 start,
                 end,
             },
-            ...events.slice(1),
+            ...shifts.slice(1),
         ];
-        setEvents(updatedEvents);
+        setShifts(updatedEvents);
     };
 
     const onEventResize = (data) => {
         const { start, end } = data;
         const updatedEvents = [
             {
-                ...events[0],
+                ...shifts[0],
                 start,
                 end,
             },
-            ...events.slice(1),
+            ...shifts.slice(1),
         ];
-        setEvents(updatedEvents);
+        setShifts(updatedEvents);
     };
 
     // Called when you select a date.
@@ -149,7 +204,7 @@ const MyCalendar = () => {
         }
 
         if (view === "month") {
-            retrieveEvent(16, 16);
+            retrieveShift(16, 16);
             setCurrentView("month");
         }
 
@@ -160,6 +215,13 @@ const MyCalendar = () => {
 
     // triggered when slot/s from day/week view is selected
     const onSelectSlot = async ({ id, start, end }) => {
+        // if user is not approved, show warning
+        if (role == "Employee" && isApproved == "Not Approved") {
+            // show a warning message
+            console.log("Not approved... showing warning now");
+            setShowToast(true);
+            return;
+        }
         if (currentView == "day" || currentView == "week") {
             //TODO title should be the person's name
             setStart(start);
@@ -171,6 +233,7 @@ const MyCalendar = () => {
                 start,
                 end,
                 isVisible: true,
+                UserID: user.uid,
             });
 
             setShowCreate(true);
@@ -187,6 +250,7 @@ const MyCalendar = () => {
             title: "New Shift",
             start,
             end,
+            UserID: user.uid,
         });
         // console.log(id);
 
@@ -199,13 +263,22 @@ const MyCalendar = () => {
     const createShift = async (newShift) => {
         try {
             handleClose();
-            // Add the new event to Firestore
-            const docRef = await addDoc(collection(db, "shift"), newShift);
-            //   console.log("Event added with ID:", docRef.id);
+            // Reference to this user's document
+            const userRef = doc(db, "users", userID);
+            // Reference to this user's shifts subcollection
+            const shiftsCollectionRef = collection(userRef, "shifts");
 
-            useEffect(() => {
-                retrieveEvent(1, 1);
-            }, []);
+            // Add new document to the shifts subcollection
+            addDoc(shiftsCollectionRef, newShift)
+                .then((docRef) => {
+                    console.log("New shift document ID:", docRef.id);
+                })
+                .catch((error) => {
+                    console.error("Error adding shift document:", error);
+                });
+
+            // Refresh the shifts
+            retrieveShift(1, 1);
         } catch (error) {
             console.error("Error adding event:", error);
         }
@@ -215,12 +288,18 @@ const MyCalendar = () => {
     const saveShift = async (updatedShift) => {
         try {
             handleClose();
+            // Reference to this user's document
+            const userRef = doc(db, "users", userID);
+            // Reference to this user's shifts subcollection
+            const shiftsCollectionRef = doc(
+                collection(userRef, "shifts"),
+                updatedShift.id
+            );
             // Update the shift in Firestore
-            await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+            await updateDoc(shiftsCollectionRef, updatedShift);
 
-            useEffect(() => {
-                retrieveEvent(1, 1);
-            }, []);
+            // Refresh the shifts
+            retrieveShift(1, 1);
         } catch (error) {
             console.error("Error updating event:", error);
         }
@@ -229,88 +308,111 @@ const MyCalendar = () => {
     const deleteShift = async (updatedShift) => {
         try {
             handleClose();
-
             updatedShift.isVisible = false; // Set isVisible to false
+            // Reference to this user's document
+            const userRef = doc(db, "users", userID);
+            // Reference to this user's shifts subcollection
+            const shiftsCollectionRef = doc(
+                collection(userRef, "shifts"),
+                updatedShift.id
+            );
+            // Update the shift in Firestore
+            await updateDoc(shiftsCollectionRef, updatedShift);
 
-            // Update shift in db
-            await updateDoc(doc(db, "shift", updatedShift.id), updatedShift);
+            // Refresh the shifts
+            retrieveShift(1, 1);
         } catch (error) {
             console.error("Error deleting event:", error);
         }
     };
 
     return (
-        <><div class="container">
-            <div class="row">
-                <div class="d-flex justify-content-center">
-                    <div>
-                        <DnDCalendar
-                            localizer={localizer} // Specify the localizer (Moment.js in this example)
-                            events={events} // Pass the events data
-                            startAccessor="start" // Specify the property name for the start date/time
-                            endAccessor="end" // Specify the property name for the end date/time
-                            draggableAccessor={(event) => true}
-                            onEventDrop={onEventDrop}
-                            onEventResize={onEventResize}
-                            onNavigate={onNavigate}
-                            onView={onView}
-                            // onSelecting={onSelecting}
-                            onSelectSlot={onSelectSlot}
-                            onSelectEvent={onSelectEvent}
-                            selectable
-                            style={{
-                                height: "800px",
-                                width: "1000px",
-                                justifyContent: "center",
-                                alignItems: "center",
-                            }} />
+        <div>
+            <DnDCalendar
+                localizer={localizer} // Specify the localizer (Moment.js in this example)
+                events={shifts} // Pass the events data
+                startAccessor="start" // Specify the property name for the start date/time
+                endAccessor="end" // Specify the property name for the end date/time
+                draggableAccessor={(event) => true}
+                onEventDrop={onEventDrop}
+                onEventResize={onEventResize}
+                onNavigate={onNavigate}
+                onView={onView}
+                // onSelecting={onSelecting}
+                onSelectSlot={onSelectSlot}
+                onSelectEvent={onSelectEvent}
+                selectable
+                style={{
+                    height: "800px",
+                    width: "1000px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                }}
+            />
 
-                        <Modal
-                            show={show}
-                            onHide={handleClose}
-                            size="lg"
-                            aria-labelledby="contained-modal-title-vcenter"
-                            centered
-                        >
-                            <Modal.Header closeButton>
-                                <Modal.Title>Modal heading</Modal.Title>
-                            </Modal.Header>
-                            <Modal.Body>
-                                <Form>
-                                    <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-                                        <div style={{ display: "flex", alignItems: "center" }}>
-                                            <p style={{ marginRight: "10px" }}>From</p>
-                                            <DateTimePicker onChange={onChangeStart} value={start} />
-                                            <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
-                                            <DateTimePicker onChange={onChangeEnd} value={end} />
-                                        </div>
-                                    </Form.Group>
-                                </Form>
-                            </Modal.Body>
-                            <Modal.Footer>
-                                {showCreate && (
-                                    <Button variant="primary" onClick={() => createShift(newShift)}>
-                                        Add Shift
-                                    </Button>
-                                )}
-                            </Modal.Footer>
-                            {showDelete && (
-                                <Modal.Footer>
-                                    {showDelete && (
-                                        <Button variant="danger" onClick={() => deleteShift(newShift)}>
-                                            Delete
-                                        </Button>
-                                    )}
-                                    <Button variant="primary" onClick={() => saveShift(newShift)}>
-                                        Update
-                                    </Button>
-                                </Modal.Footer>
-                            )}
-                        </Modal>
-                    </div>
-                </div>
-            </div>
-        </div></>
+            <Modal
+                show={showModal}
+                onHide={handleClose}
+                size="lg"
+                aria-labelledby="contained-modal-title-vcenter"
+                centered
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Modal heading</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form>
+                        <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                            <div style={{ display: "flex", alignItems: "center" }}>
+                                <p style={{ marginRight: "10px" }}>From</p>
+                                <DateTimePicker onChange={onChangeStart} value={start} />
+                                <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
+                                <DateTimePicker onChange={onChangeEnd} value={end} />
+                            </div>
+                        </Form.Group>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer>
+                    {showCreate && (
+                        <Button variant="primary" onClick={() => createShift(newShift)}>
+                            Add Shift
+                        </Button>
+                    )}
+                </Modal.Footer>
+                {showDelete && (
+                    <Modal.Footer>
+                        {showDelete && (
+                            <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                                Delete
+                            </Button>
+                        )}
+                        <Button variant="primary" onClick={() => saveShift(newShift)}>
+                            Update
+                        </Button>
+                    </Modal.Footer>
+                )}
+            </Modal>
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+                <Toast
+                    onClose={() => setShowToast(false)}
+                    show={showToast}
+                    delay={6000}
+                    autohide
+                >
+                    <Toast.Header className="bg-danger text-white">
+                        <img
+                            src="holder.js/20x20?text=%20"
+                            className="rounded me-2"
+                            alt=""
+                        />
+                        <strong className="me-auto">Warning</strong>
+                    </Toast.Header>
+                    <Toast.Body className="bg-danger text-white">
+                        Please wait until you're approved by your manager.
+                    </Toast.Body>
+                </Toast>
+            </ToastContainer>
+        </div>
     );
 }; // end of MyCalendar
 
