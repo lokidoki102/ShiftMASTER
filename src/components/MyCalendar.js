@@ -332,91 +332,95 @@ const MyCalendar = () => {
     };
 
     return (
-        <div>
-            <DnDCalendar
-                localizer={localizer} // Specify the localizer (Moment.js in this example)
-                events={shifts} // Pass the events data
-                startAccessor="start" // Specify the property name for the start date/time
-                endAccessor="end" // Specify the property name for the end date/time
-                draggableAccessor={(event) => true}
-                onEventDrop={onEventDrop}
-                onEventResize={onEventResize}
-                onNavigate={onNavigate}
-                onView={onView}
-                // onSelecting={onSelecting}
-                onSelectSlot={onSelectSlot}
-                onSelectEvent={onSelectEvent}
-                selectable
-                style={{
-                    height: "800px",
-                    width: "1000px",
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            />
+        <div class="container">
+            <div class="row">
+                <div class="d-flex justify-content-center">
+                    <DnDCalendar
+                        localizer={localizer} // Specify the localizer (Moment.js in this example)
+                        events={shifts} // Pass the events data
+                        startAccessor="start" // Specify the property name for the start date/time
+                        endAccessor="end" // Specify the property name for the end date/time
+                        draggableAccessor={(event) => true}
+                        onEventDrop={onEventDrop}
+                        onEventResize={onEventResize}
+                        onNavigate={onNavigate}
+                        onView={onView}
+                        // onSelecting={onSelecting}
+                        onSelectSlot={onSelectSlot}
+                        onSelectEvent={onSelectEvent}
+                        selectable
+                        style={{
+                            height: "800px",
+                            width: "1000px",
+                            justifyContent: "center",
+                            alignItems: "center",
+                        }}
+                    />
 
-            <Modal
-                show={showModal}
-                onHide={handleClose}
-                size="lg"
-                aria-labelledby="contained-modal-title-vcenter"
-                centered
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Modal heading</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form>
-                        <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-                            <div style={{ display: "flex", alignItems: "center" }}>
-                                <p style={{ marginRight: "10px" }}>From</p>
-                                <DateTimePicker onChange={onChangeStart} value={start} />
-                                <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
-                                <DateTimePicker onChange={onChangeEnd} value={end} />
-                            </div>
-                        </Form.Group>
-                    </Form>
-                </Modal.Body>
-                <Modal.Footer>
-                    {showCreate && (
-                        <Button variant="primary" onClick={() => createShift(newShift)}>
-                            Add Shift
-                        </Button>
-                    )}
-                </Modal.Footer>
-                {showDelete && (
-                    <Modal.Footer>
+                    <Modal
+                        show={showModal}
+                        onHide={handleClose}
+                        size="lg"
+                        aria-labelledby="contained-modal-title-vcenter"
+                        centered
+                    >
+                        <Modal.Header closeButton>
+                            <Modal.Title>Modal heading</Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Form>
+                                <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                        <p style={{ marginRight: "10px" }}>From</p>
+                                        <DateTimePicker onChange={onChangeStart} value={start} />
+                                        <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
+                                        <DateTimePicker onChange={onChangeEnd} value={end} />
+                                    </div>
+                                </Form.Group>
+                            </Form>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            {showCreate && (
+                                <Button variant="primary" onClick={() => createShift(newShift)}>
+                                    Add Shift
+                                </Button>
+                            )}
+                        </Modal.Footer>
                         {showDelete && (
-                            <Button variant="danger" onClick={() => deleteShift(newShift)}>
-                                Delete
-                            </Button>
+                            <Modal.Footer>
+                                {showDelete && (
+                                    <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                                        Delete
+                                    </Button>
+                                )}
+                                <Button variant="primary" onClick={() => saveShift(newShift)}>
+                                    Update
+                                </Button>
+                            </Modal.Footer>
                         )}
-                        <Button variant="primary" onClick={() => saveShift(newShift)}>
-                            Update
-                        </Button>
-                    </Modal.Footer>
-                )}
-            </Modal>
-            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
-                <Toast
-                    onClose={() => setShowToast(false)}
-                    show={showToast}
-                    delay={6000}
-                    autohide
-                >
-                    <Toast.Header className="bg-danger text-white">
-                        <img
-                            src="holder.js/20x20?text=%20"
-                            className="rounded me-2"
-                            alt=""
-                        />
-                        <strong className="me-auto">Warning</strong>
-                    </Toast.Header>
-                    <Toast.Body className="bg-danger text-white">
-                        Please wait until you're approved by your manager.
-                    </Toast.Body>
-                </Toast>
-            </ToastContainer>
+                    </Modal>
+                    <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+                        <Toast
+                            onClose={() => setShowToast(false)}
+                            show={showToast}
+                            delay={6000}
+                            autohide
+                        >
+                            <Toast.Header className="bg-danger text-white">
+                                <img
+                                    src="holder.js/20x20?text=%20"
+                                    className="rounded me-2"
+                                    alt=""
+                                />
+                                <strong className="me-auto">Warning</strong>
+                            </Toast.Header>
+                            <Toast.Body className="bg-danger text-white">
+                                Please wait until you're approved by your manager.
+                            </Toast.Body>
+                        </Toast>
+                    </ToastContainer>
+                </div>
+            </div>
         </div>
     );
 }; // end of MyCalendar
