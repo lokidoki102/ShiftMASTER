@@ -17,7 +17,7 @@ const companyCodeCollection = collection(db, "companies");
 
 export function UserAuthContextProvider({ children }) {
     const [user, setUser] = useState({});
-    const [loading, setLoading] = useState(true); // loading state
+    const [loading, setLoading] = useState(true); // Loading State
 
     function companyCodeGenerator(companyName) {
         // Generate unique company codes upon signing up by the Manager and store company codes into companyCodeCollection
@@ -73,6 +73,14 @@ export function UserAuthContextProvider({ children }) {
                 await updateDoc(newRef, {
                     UserName: name,
                     UserPhoneNumber: phoneNumber
+                }).then(() => {
+                    const notificationRef = collection(newRef, "notifications");
+                    addDoc(notificationRef, {
+                        DateOfNotification: new Date(),
+                        Notification: "You have updated your user profile.",
+                        UserID: oneDoc.id,
+                        isViewed: false
+                    })
                 });
             })
             return Promise.resolve(data);
@@ -96,30 +104,45 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
-    async function approveEmployees(allEmployees) {
-        // Approve Employees that is selected in the checkbox
+    async function approveEmployees(allEmployees, oneUser) {
+        // Approve Employees that is selected in the checkbox.
         try {
+            let arrayOfName = new Array();
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Approval") {
-                    const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
-                    const docSnap = await getDocs(docRef);
+                    arrayOfName.push(allEmployees[i].UserName);
+                    const docRefs = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRefs);
                     docSnap.forEach(async (oneDoc) => {
-                        const newRef = doc(db, "users", oneDoc.id);
-                        await updateDoc(newRef, {
+                        const userRef = doc(db, "users", oneDoc.id);
+                        await updateDoc(userRef, {
                             Status: "Approved"
+                        }).then(() => {
+                            // Sending notifications to employee that they have been approved.
+                            const notificationRef = collection(userRef, "notifications");
+                            addDoc(notificationRef, {
+                                DateOfNotification: new Date(),
+                                Notification: "You have been approved! You can start to suggest your preferred working timing.",
+                                UserID: oneDoc.id,
+                                isViewed: false
+                            })
                         });
                     })
                 }
             }
+            // Sending notification to manager which employees they have approved
+            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Approved");
         } catch (error) {
             console.log(error);
         }
     }
-    async function deleteEmployees(allEmployees) {
+    async function deleteEmployees(allEmployees, oneUser) {
         // Delete Employees that is selected in the checkbox
         try {
+            let arrayOfName = new Array();
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Deletion") {
+                    arrayOfName.push(allEmployees[i].UserName);
                     const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
@@ -128,9 +151,32 @@ export function UserAuthContextProvider({ children }) {
                     })
                 }
             }
+            // Sending notification to manager which employees they have removed
+            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Delete");
         } catch (error) {
             console.log(error);
         }
+    }
+    async function sendNotificationToManager(arrayOfName, userID, typeOfNotification) {
+        let strOfName = arrayOfName.join(", ");
+        let notificationAnswer;
+        if(typeOfNotification === "Approved"){
+            notificationAnswer = "You have approved " + strOfName + " from the team.";
+        } else if(typeOfNotification === "Delete"){
+            notificationAnswer = "You have removed " + strOfName + " from the team.";
+        }
+        const docRefUser = query(userCollection, where("UserID", "==", userID));
+        const docSnapUser = await getDocs(docRefUser);
+        docSnapUser.forEach(async (oneDoc) => {
+            const newRef = doc(db, "users", oneDoc.id);
+            const notificationRef = collection(newRef, "notifications");
+            addDoc(notificationRef, {
+                DateOfNotification: new Date(),
+                Notification: notificationAnswer,
+                UserID: oneDoc.id,
+                isViewed: false
+            })
+        })
     }
     async function authenticateUserToCompany(uniqueCode, companyName) {
         // Get the Company Name from the Unique Code (in case some companies name are identical)
@@ -188,6 +234,27 @@ export function UserAuthContextProvider({ children }) {
         }
         return data;
     }
+    function assignNotification(userID, uniqueCode, companyCode) {
+        // Assign notifications based on the role; Employee/Manager
+        let data = {};
+        const todayDate = new Date();
+        if (uniqueCode === "") {
+            data = {
+                UserID: userID,
+                DateOfNotification: todayDate,
+                Notification: "You have successfully signed up as a Manager! This will be your unique code: " + companyCode + ".",
+                isViewed: false
+            }
+        } else {
+            data = {
+                UserID: userID,
+                DateOfNotification: todayDate,
+                Notification: "You have successfully signed up as an Employee! Please wait for your manager approval.",
+                isViewed: false
+            }
+        }
+        return data;
+    }
     function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
@@ -196,7 +263,13 @@ export function UserAuthContextProvider({ children }) {
             const userID = user.uid;
             const companyCode = companyCodeGenerator(companyName);
             authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
+                addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then((docRef) => {
+                    // Codes for referencing from User to Notification 
+                    const userRef = doc(db, "users", docRef.id);
+                    const notificationRef = collection(userRef, "notifications");
+                    //
+                    addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
+                });
             })
         });
     }
@@ -207,7 +280,13 @@ export function UserAuthContextProvider({ children }) {
             if (user) {
                 const companyCode = companyCodeGenerator(companyName);
                 authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                    addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
+                    addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then((docRef) => {
+                        // Codes for referencing from User to Notification 
+                        const userRef = doc(db, "users", docRef.id);
+                        const notificationRef = collection(userRef, "notifications");
+                        // 
+                        addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
+                    });
                 })
             }
         });

@@ -72,13 +72,14 @@ const UserProfile = () => {
             for (let i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Approval") {
                     buttonResult = true;
+                    break;
                 }
             }
             if (buttonResult === true) {
-                await approveEmployees(allEmployees);
+                await approveEmployees(allEmployees, oneUser);
                 setTimeout(function () {
                     window.location.reload(true);
-                }, 3000);
+                }, 4000);
             } else {
                 setShowApproved(true);
             }
@@ -94,13 +95,14 @@ const UserProfile = () => {
             for (let i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Deletion") {
                     buttonResult = true;
+                    break;
                 }
             }
             if (buttonResult === true) {
-                await deleteEmployees(allEmployees);
+                await deleteEmployees(allEmployees, oneUser);
                 setTimeout(function () {
                     window.location.reload(true);
-                }, 3000);
+                }, 4000);
             } else {
                 setShowDelete(true);
             }
@@ -348,7 +350,7 @@ const UserProfile = () => {
                     </div>
                 </div>
                 </>}
-            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+            <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1, width: '320px' }}>
                 <Toast
                     onClose={() => setShowApproved(false)}
                     show={showApproved}
