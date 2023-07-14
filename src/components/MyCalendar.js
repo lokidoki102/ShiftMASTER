@@ -402,12 +402,22 @@ const MyCalendar = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-              <div style={{ display: "flex", alignItems: "center" }}>
-                <p style={{ marginRight: "10px" }}>From</p>
-                <DateTimePicker onChange={onChangeStart} value={start} />
-                <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
-                <DateTimePicker onChange={onChangeEnd} value={end} />
-              </div>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Start</td>
+                    <td>
+                      <DateTimePicker onChange={onChangeStart} value={start} />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>End</td>
+                    <td>
+                      <DateTimePicker onChange={onChangeEnd} value={end} />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </Form.Group>
           </Form>
         </Modal.Body>
