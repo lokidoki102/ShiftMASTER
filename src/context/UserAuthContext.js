@@ -158,6 +158,7 @@ export function UserAuthContextProvider({ children }) {
         }
     }
     async function sendNotificationToManager(arrayOfName, userID, typeOfNotification) {
+        // Choose which notifcation message to send to Manager
         let strOfName = arrayOfName.join(", ");
         let notificationAnswer;
         if(typeOfNotification === "Approved"){
