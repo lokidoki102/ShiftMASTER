@@ -43,6 +43,13 @@ const MyCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(null); // the clicked date
   const [currentView, setCurrentView] = useState("");
 
+  // Calendar
+  const views = {
+    month: true,
+    week: true,
+    day: true,
+  };
+
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [showDelete, setShowDelete] = useState(false); // for delete button
@@ -72,6 +79,7 @@ const MyCalendar = () => {
     }));
     setEnd(date);
   };
+  // ---- end of time picker ----
 
   useEffect(() => {
     retrieveShift(16, 16);
@@ -161,28 +169,27 @@ const MyCalendar = () => {
     return () => unsubscribe();
   }, []);
 
+  // Query for getting employee names
+  const queryEmployees = async (uniqueCode) => {
+    const fetchedEmployees = [];
+    const q = query(
+      collection(db, "users"),
+      where("UniqueCode", "==", uniqueCode)
+    );
 
-    // Query for getting employee names
-    const queryEmployees = async (uniqueCode) => {
-        const fetchedEmployees = [];
-        const q = query(
-          collection(db, "users"),
-          where("UniqueCode", "==", uniqueCode)
-        );
-    
-        try {
-          const querySnapshot = await getDocs(q);
-          querySnapshot.forEach((doc) => {
-            const employee = {
-                id: doc.id,
-                name: doc.data().UserName,
-            };
-            fetchedEmployees.push(employee);
-          });
-        } catch (error) {
-          console.error("Error querying employees:", error);
-        }
-      };
+    try {
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc) => {
+        const employee = {
+          id: doc.id,
+          name: doc.data().UserName,
+        };
+        fetchedEmployees.push(employee);
+      });
+    } catch (error) {
+      console.error("Error querying employees:", error);
+    }
+  };
 
   // event handlers for calendar
   const onEventDrop = (data) => {
@@ -369,6 +376,7 @@ const MyCalendar = () => {
         onEventResize={onEventResize}
         onNavigate={onNavigate}
         onView={onView}
+        views={views}
         // onSelecting={onSelecting}
         onSelectSlot={onSelectSlot}
         onSelectEvent={onSelectEvent}
