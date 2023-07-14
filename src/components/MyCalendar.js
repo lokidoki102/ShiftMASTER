@@ -37,6 +37,7 @@ const MyCalendar = () => {
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
   const [shifts, setShifts] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
   const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
   const [newShift, setNewShift] = useState([]); // the new shift created
@@ -189,6 +190,8 @@ const MyCalendar = () => {
     } catch (error) {
       console.error("Error querying employees:", error);
     }
+
+    setEmployees(fetchedEmployees);
   };
 
   // event handlers for calendar
@@ -364,6 +367,12 @@ const MyCalendar = () => {
     }
   };
 
+  // Event listener for dropdown for employee's name
+  const handleDropdownChange = (event) => {
+    const selectedValue = event.target.value;
+    // Do something with the selected value
+  };
+
   return (
     <div>
       <DnDCalendar
@@ -414,6 +423,19 @@ const MyCalendar = () => {
                     <td>End</td>
                     <td>
                       <DateTimePicker onChange={onChangeEnd} value={end} />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Name</td>
+                    <td>
+                      <select onChange={handleDropdownChange}>
+                        <option value="">Select an employee</option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                   </tr>
                 </tbody>
