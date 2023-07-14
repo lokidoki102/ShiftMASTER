@@ -36,6 +36,7 @@ const MyCalendar = () => {
   const [userID, setUserID] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
+  const [uniqueCode, setUniqueCode] = useState("");
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
@@ -113,6 +114,7 @@ const MyCalendar = () => {
           const role = doc.data().Role.toString();
           setRole(role);
           const uniqueCode = doc.data().UniqueCode.toString();
+          setUniqueCode(uniqueCode);
           let subcollectionRef = null;
           let subcollectionQuery = null;
           // Employee: Show only his/her own shifts
@@ -265,7 +267,7 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
-        // id,
+        UniqueCode: uniqueCode,
         title: "New Shift",
         start,
         end,
@@ -287,6 +289,7 @@ const MyCalendar = () => {
     setEnd(end);
     setNewShift({
       id,
+      UniqueCode: uniqueCode,
       title: "New Shift",
       start,
       end,
