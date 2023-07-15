@@ -34,6 +34,7 @@ const localizer = momentLocalizer(moment);
 const MyCalendar = () => {
   const { user } = useUserAuth();
   const [userID, setUserID] = useState("");
+  const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
   const [uniqueCode, setUniqueCode] = useState("");
@@ -107,6 +108,7 @@ const MyCalendar = () => {
       await Promise.all(
         querySnapshot.docs.map(async (doc) => {
           setUserID(doc.id.toString());
+          setName(doc.data().UserName.toString());
           console.log("Document ID:", doc.id);
           console.log("Document data:", doc.data());
           const isApproved = doc.data().Status.toString(); // retrieve status
@@ -156,6 +158,7 @@ const MyCalendar = () => {
             const shiftData = subdoc.data();
             fetchedShifts.push({
               id: subdoc.id,
+              UserID: shiftData.UserID,
               title: shiftData.title,
               start: shiftData.start.toDate(),
               end: shiftData.end.toDate(),
@@ -184,7 +187,7 @@ const MyCalendar = () => {
       const querySnapshot = await getDocs(q);
       querySnapshot.forEach((doc) => {
         const employee = {
-          id: doc.id,
+          id: doc.data().UserID,
           name: doc.data().UserName,
         };
         fetchedEmployees.push(employee);
@@ -268,7 +271,7 @@ const MyCalendar = () => {
       handleShow();
       setNewShift({
         UniqueCode: uniqueCode,
-        title: "New Shift",
+        title: name,
         start,
         end,
         isVisible: true,
@@ -281,7 +284,7 @@ const MyCalendar = () => {
   };
 
   // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end, isConfirmed }) => {
+  const onSelectEvent = ({ id, start, end, isConfirmed, UserID}) => {
     console.log("(onSelectEvent)ID: " + id);
     console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
     // store selected event's start and end times
@@ -290,13 +293,12 @@ const MyCalendar = () => {
     setNewShift({
       id,
       UniqueCode: uniqueCode,
-      title: "New Shift",
+      title: name,
       start,
       end,
-      UserID: user.uid,
+      UserID,
       isConfirmed,
     });
-    // console.log(id);
 
     // show modal
     setShowDelete(true);
@@ -431,7 +433,7 @@ const MyCalendar = () => {
                   <tr>
                     <td>Name</td>
                     <td>
-                      <select onChange={handleDropdownChange}>
+                      <select onChange={handleDropdownChange} defaultValue={newShift.UserID}>
                         <option value="">Select an employee</option>
                         {employees.map((employee) => (
                           <option key={employee.id} value={employee.id}>
