@@ -15,6 +15,7 @@ import {
   doc,
   collectionGroup,
   getDocs,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -33,7 +34,8 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
   const { user } = useUserAuth();
-  const [userID, setUserID] = useState("");
+  const [currentUserDocID, setCurrentUserID] = useState(""); // the userID of the one logged in
+  const [selectedValue, setSelectedValue] = useState("");
   const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
@@ -107,7 +109,7 @@ const MyCalendar = () => {
 
       await Promise.all(
         querySnapshot.docs.map(async (doc) => {
-          setUserID(doc.id.toString());
+          setCurrentUserID(doc.id.toString());
           setName(doc.data().UserName.toString());
           console.log("Document ID:", doc.id);
           console.log("Document data:", doc.data());
@@ -284,8 +286,9 @@ const MyCalendar = () => {
   };
 
   // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end, isConfirmed, UserID}) => {
+  const onSelectEvent = ({ id, start, end, isConfirmed, UserID }) => {
     console.log("(onSelectEvent)ID: " + id);
+    console.log("(onSelectEvent)UserID: " + UserID);
     console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
     // store selected event's start and end times
     setStart(start);
@@ -306,22 +309,22 @@ const MyCalendar = () => {
   };
 
   // adding shifts into the firebase
-  const createShift = async (newShift) => {
+  const createShift = async (newShift, userDocID, title) => {
     try {
       handleClose();
       // Reference to this user's document
-      const userRef = doc(db, "users", userID);
+      const userRef = doc(db, "users", userDocID);
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = collection(userRef, "shifts");
 
+      if (title != "") {
+        newShift.title = title;
+      }
+
       // Add new document to the shifts subcollection
-      addDoc(shiftsCollectionRef, newShift)
-        .then((docRef) => {
-          console.log("New shift document ID:", docRef.id);
-        })
-        .catch((error) => {
-          console.error("Error adding shift document:", error);
-        });
+      addDoc(shiftsCollectionRef, newShift).catch((error) => {
+        console.error("Error adding shift document:", error);
+      });
 
       // Refresh the shifts
       retrieveShift(1, 1);
@@ -330,22 +333,64 @@ const MyCalendar = () => {
     }
   };
 
+  //TODO When the manager selects a name from the dropdown
+  // it should use that selected userID
+  // 1) So what would happen if I change the name from employee 1 to
+  // employee 2?
+  // --> That should delete the existing document from employee 1 and make a new one for employee 2
+  // 2) So how do I know if there's a change in the selected employee?
+  // -->
   // updating a selected shift in the firebase
   const saveShift = async (updatedShift) => {
     try {
       handleClose();
+      //TODO a problem with this userID, if the manager is the one editing, then the manager's userID would be used instead. This should not be the case.
+      // --> Possible solution would be to setUserID on select event too.
+      // --> This way, I can keep track of whose shift was selected and update accordingly.
+      // --> I can also compare the current userID vs the selectedUserID
+      // -----> If it's different then I should do the deletion and creation of a new shift as per mentioned above.
+
       // Reference to this user's document
-      const userRef = doc(db, "users", userID);
+      const userRef = doc(db, "users", currentUserDocID);
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = doc(
         collection(userRef, "shifts"),
         updatedShift.id
       );
-      // Update the shift in Firestore
-      await updateDoc(shiftsCollectionRef, updatedShift);
+
+      // Compare if there's a change in the selected employee for the shift
+      if (updatedShift.UserID !== selectedValue && updatedShift.UserID != "") {
+        // delete the previous document using the old userid
+        await deleteShift(updatedShift);
+        // make a new document using the new userid
+        // setNewShift((original) => ({
+        //     ...original,
+        //     UserID: selectedValue,
+        //   }));
+        console.log("DATA INCOMING");
+        console.log(updatedShift);
+        updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
+        updatedShift.UserID = selectedValue;
+
+        let userDocID = "";
+        let title = "";
+
+        const querySnapshot = await getDocs(collection(db, "users"));
+        querySnapshot.forEach((doc) => {
+          if (doc.data().UserID === selectedValue) {
+            // Reference to this user document
+            userDocID = doc.id;
+            title = doc.data().UserName;
+          }
+        });
+        await createShift(updatedShift, userDocID, title);
+      } else {
+        // Update the shift in Firestore
+        await updateDoc(shiftsCollectionRef, updatedShift);
+      }
 
       // Refresh the shifts
-      retrieveShift(1, 1);
+        retrieveShift(1, 1);
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -355,8 +400,16 @@ const MyCalendar = () => {
     try {
       handleClose();
       updatedShift.isVisible = false; // Set isVisible to false
+      let userRef = null;
+      const querySnapshot = await getDocs(collection(db, "users"));
+      querySnapshot.forEach((doc) => {
+        if (doc.data().UserID === updatedShift.UserID) {
+          // Reference to this user document
+          userRef = doc.ref;
+        }
+      });
       // Reference to this user's document
-      const userRef = doc(db, "users", userID);
+      //   const userRef = doc(db, "users", updatedShift.UserID);
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = doc(
         collection(userRef, "shifts"),
@@ -374,8 +427,7 @@ const MyCalendar = () => {
 
   // Event listener for dropdown for employee's name
   const handleDropdownChange = (event) => {
-    const selectedValue = event.target.value;
-    // Do something with the selected value
+    setSelectedValue(event.target.value);
   };
 
   return (
@@ -433,7 +485,10 @@ const MyCalendar = () => {
                   <tr>
                     <td>Name</td>
                     <td>
-                      <select onChange={handleDropdownChange} defaultValue={newShift.UserID}>
+                      <select
+                        onChange={handleDropdownChange}
+                        defaultValue={newShift.UserID}
+                      >
                         <option value="">Select an employee</option>
                         {employees.map((employee) => (
                           <option key={employee.id} value={employee.id}>
@@ -450,7 +505,10 @@ const MyCalendar = () => {
         </Modal.Body>
         <Modal.Footer>
           {showCreate && (
-            <Button variant="primary" onClick={() => createShift(newShift)}>
+            <Button
+              variant="primary"
+              onClick={() => createShift(newShift, currentUserDocID, "")}
+            >
               Add Shift
             </Button>
           )}
