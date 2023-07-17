@@ -3,9 +3,30 @@ import { Button } from "react-bootstrap";
 import { useUserAuth } from "../context/UserAuthContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/free-solid-svg-icons'
+import { auth } from "../firebase";
 
 const Home = () => {
-    const { user } = useUserAuth();
+    const { user, getNotifications } = useUserAuth();
+    const [allNotifications, setAllNotifications] = useState([]);
+    const [loggedIn, setLoggedIn] = useState();
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            setLoggedIn(true);
+        } else {
+            setLoggedIn(false);
+        }
+    })
+
+    useEffect(() => {
+        if (loggedIn !== undefined) {
+            console.log(loggedIn);
+            const getAllNotifications = async () => {
+                const allNotifications = await getNotifications(user.uid);
+                setAllNotifications(allNotifications);
+            }
+            getAllNotifications();
+        }
+    }, [loggedIn]);
 
     return (
         <>
@@ -26,12 +47,13 @@ const Home = () => {
                             </ol>
                         </div>
                     </div>
-
-                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative'}}>
+                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative' }}>
                         <h3 class="headerForDash" style={{ color: '#40006C' }}><FontAwesomeIcon icon={faBell} /> Notifications</h3>
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
-                                <li class="list-group-item">A list item</li>
+                                {allNotifications.map((perNotification) =>
+                                    <li class="list-group-item">{perNotification.Notification}</li>
+                                )}
                             </ul>
                         </div>
                         <Button id="notificationButton" variant="light" type="Submit">

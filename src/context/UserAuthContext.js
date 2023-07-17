@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, QuerySnapshot } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -78,7 +78,7 @@ export function UserAuthContextProvider({ children }) {
                     addDoc(notificationRef, {
                         DateOfNotification: new Date(),
                         Notification: "You have updated your user profile.",
-                        UserID: oneDoc.id,
+                        UserID: userId,
                         isViewed: false
                     })
                 });
@@ -110,6 +110,7 @@ export function UserAuthContextProvider({ children }) {
             let arrayOfName = new Array();
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Approval") {
+                    const userId = allEmployees[i].UserID;
                     arrayOfName.push(allEmployees[i].UserName);
                     const docRefs = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRefs);
@@ -123,7 +124,7 @@ export function UserAuthContextProvider({ children }) {
                             addDoc(notificationRef, {
                                 DateOfNotification: new Date(),
                                 Notification: "You have been approved! You can start to suggest your preferred working timing.",
-                                UserID: oneDoc.id,
+                                UserID: userId,
                                 isViewed: false
                             })
                         });
@@ -161,9 +162,9 @@ export function UserAuthContextProvider({ children }) {
         // Choose which notifcation message to send to Manager
         let strOfName = arrayOfName.join(", ");
         let notificationAnswer;
-        if(typeOfNotification === "Approved"){
-            notificationAnswer = "You have approved " + strOfName + " from the team.";
-        } else if(typeOfNotification === "Delete"){
+        if (typeOfNotification === "Approved") {
+            notificationAnswer = "You have approved " + strOfName + " to the team.";
+        } else if (typeOfNotification === "Delete") {
             notificationAnswer = "You have removed " + strOfName + " from the team.";
         }
         const docRefUser = query(userCollection, where("UserID", "==", userID));
@@ -174,7 +175,7 @@ export function UserAuthContextProvider({ children }) {
             addDoc(notificationRef, {
                 DateOfNotification: new Date(),
                 Notification: notificationAnswer,
-                UserID: oneDoc.id,
+                UserID: userID,
                 isViewed: false
             })
         })
@@ -256,6 +257,39 @@ export function UserAuthContextProvider({ children }) {
         }
         return data;
     }
+    async function getNotifications(userID) {
+        // Get all Notifications from specific ID and display in the Home Page
+        console.log("Getting Notifications for User")
+        let notifications = [];
+        let subcollectionRef;
+        let subcollectionQuery;
+        const docRef = query(userCollection, where("UserID", "==", userID));
+        try {
+            onSnapshot(docRef, async (querySnapshot) => {
+                querySnapshot.docs.map(async (doc) => {
+                    subcollectionRef = collection(doc.ref, "notifications");
+                    subcollectionQuery = query(
+                        subcollectionRef,
+                        where("UserID", "==", userID)
+                    );
+                })
+                const subcollectionNotification = await getDocs(subcollectionQuery);
+                subcollectionNotification.forEach((subDoc) => {
+                    let data = subDoc.data();
+                    notifications.push({
+                        DateOfNotification: data.DateOfNotification,
+                        Notification: data.Notification,
+                        UserID: data.UserID,
+                        isViewed: data.isViewed
+                    });
+                });
+            })
+            console.log(notifications);
+            return Promise.resolve(notifications);
+        } catch (error) {
+            console.log(error);
+        }
+    }
     function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
@@ -274,23 +308,46 @@ export function UserAuthContextProvider({ children }) {
             })
         });
     }
-    function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
+    async function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using Google email (seperate manager and employee role)
+        // This function works in the absolutely wrong way, idk how to do :(
         console.log("Entered Sign Up (Google Email)");
-        return onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const companyCode = companyCodeGenerator(companyName);
-                authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                    addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then((docRef) => {
-                        // Codes for referencing from User to Notification 
-                        const userRef = doc(db, "users", docRef.id);
-                        const notificationRef = collection(userRef, "notifications");
-                        // 
-                        addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
-                    });
-                })
-            }
-        });
+        try {
+            /*return Promise.all(onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const companyCode = companyCodeGenerator(companyName);
+                    await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                        await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                            // Codes for referencing from User to Notification 
+                            const userRef = doc(db, "users", docRef.id);
+                            const notificationRef = collection(userRef, "notifications");
+                            // 
+                            addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
+                        });
+                    })
+                }
+                window.open("/home", "_self");
+            }));*/
+            return onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    const companyCode = companyCodeGenerator(companyName);
+                    authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                        console.log("First Step");
+                        await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                            console.log("Second Step");
+                            // Codes for referencing from User to Notification 
+                            const userRef = doc(db, "users", docRef.id);
+                            const notificationRef = collection(userRef, "notifications");
+                            // 
+                            await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
+                            console.log("Third Step");
+                        });
+                    })
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
     function logIn(email, password) {
         // Log In using normal email and password
@@ -351,7 +408,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, loading }}>
             {children}
         </userAuthContext.Provider>
     );

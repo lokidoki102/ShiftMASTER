@@ -19,7 +19,7 @@ const Login = () => {
         try {
             await logIn(email, password).then((result) => {
                 if (result === false) {
-                    console.log("Navigate to Sign Up (User Exist in Firebase, but not in Firestore");
+                    console.log("Navigate to Sign Up (User Exist in Firebase, but not in Firestore)");
                     navigate("/signup");
                 } else {
                     console.log("Navigate to Home (User Exist)");
@@ -37,7 +37,7 @@ const Login = () => {
         try {
             googleSignIn().then((result) => {
                 if (result === false) {
-                    console.log("Navigate to Sign Up (User Does Not Exist");
+                    console.log("Navigate to Sign Up (User Does Not Exist)");
                     navigate("/signup");
                 } else {
                     console.log("Navigate to Home (User Exist)");
