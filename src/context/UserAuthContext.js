@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -76,7 +76,7 @@ export function UserAuthContextProvider({ children }) {
                 }).then(() => {
                     const notificationRef = collection(newRef, "notifications");
                     addDoc(notificationRef, {
-                        DateOfNotification: new Date(),
+                        Timestamp: serverTimestamp(),
                         Notification: "You have updated your user profile.",
                         UserID: userId,
                         isViewed: false
@@ -122,7 +122,7 @@ export function UserAuthContextProvider({ children }) {
                             // Sending notifications to employee that they have been approved.
                             const notificationRef = collection(userRef, "notifications");
                             addDoc(notificationRef, {
-                                DateOfNotification: new Date(),
+                                Timestamp: serverTimestamp(),
                                 Notification: "You have been approved! You can start to suggest your preferred working timing.",
                                 UserID: userId,
                                 isViewed: false
@@ -173,7 +173,7 @@ export function UserAuthContextProvider({ children }) {
             const newRef = doc(db, "users", oneDoc.id);
             const notificationRef = collection(newRef, "notifications");
             addDoc(notificationRef, {
-                DateOfNotification: new Date(),
+                Timestamp: serverTimestamp(),
                 Notification: notificationAnswer,
                 UserID: userID,
                 isViewed: false
@@ -239,18 +239,17 @@ export function UserAuthContextProvider({ children }) {
     function assignNotification(userID, uniqueCode, companyCode) {
         // Assign notifications based on the role; Employee/Manager
         let data = {};
-        const todayDate = new Date();
         if (uniqueCode === "") {
             data = {
                 UserID: userID,
-                DateOfNotification: todayDate,
+                Timestamp: serverTimestamp(),
                 Notification: "You have successfully signed up as a Manager! This will be your unique code: " + companyCode + ".",
                 isViewed: false
             }
         } else {
             data = {
                 UserID: userID,
-                DateOfNotification: todayDate,
+                Timestamp: serverTimestamp(),
                 Notification: "You have successfully signed up as an Employee! Please wait for your manager approval.",
                 isViewed: false
             }
@@ -271,7 +270,8 @@ export function UserAuthContextProvider({ children }) {
                         subcollectionRef = collection(doc.ref, "notifications");
                         subcollectionQuery = query(
                             subcollectionRef,
-                            where("UserID", "==", userID)
+                            where("UserID", "==", userID),
+                            orderBy("Timestamp", "desc")
                         );
                     })
                     const subcollectionNotification = await getDocs(subcollectionQuery);
@@ -279,7 +279,7 @@ export function UserAuthContextProvider({ children }) {
                         let data = subDoc.data();
                         if (data.isViewed === false) {
                             notifications.push({
-                                DateOfNotification: data.DateOfNotification,
+                                Timestamp: data.Timestamp,
                                 Notification: data.Notification,
                                 UserID: data.UserID,
                                 isViewed: data.isViewed

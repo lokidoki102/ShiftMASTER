@@ -57,7 +57,9 @@ const Home = () => {
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
                                 {allNotifications && allNotifications.map((perNotification) =>
-                                    <li class="list-group-item">{perNotification.Notification}</li>
+                                    <li class="list-group-item">
+                                        {perNotification.Timestamp.toDate().toJSON().slice(0, 10) + " (" + perNotification.Timestamp.toDate().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) + "): " + perNotification.Notification}
+                                    </li>
                                 )}
                             </ul>
                         </div>
