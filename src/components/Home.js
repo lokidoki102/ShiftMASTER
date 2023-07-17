@@ -21,13 +21,15 @@ const Home = () => {
         if (loggedIn !== undefined) {
             if (loggedIn === true) {
                 const getAllNotifications = async () => {
-                    const allNotifications = await getNotifications(user.uid);
-                    setAllNotifications(allNotifications);
+                    const Notifications = await getNotifications(user.uid);
+                    setAllNotifications(Notifications);
                 }
-                return () => getAllNotifications();
+                getAllNotifications();
             }
         }
     }, [loggedIn]);
+
+    console.log(allNotifications);
 
     return (
         <>
@@ -52,7 +54,7 @@ const Home = () => {
                         <h3 class="headerForDash" style={{ color: '#40006C' }}><FontAwesomeIcon icon={faBell} /> Notifications</h3>
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
-                                {allNotifications.map((perNotification) =>
+                                {allNotifications && allNotifications.map((perNotification) =>
                                     <li class="list-group-item">{perNotification.Notification}</li>
                                 )}
                             </ul>

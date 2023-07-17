@@ -263,9 +263,11 @@ export function UserAuthContextProvider({ children }) {
         let notifications = [];
         let subcollectionRef;
         let subcollectionQuery;
+        console.log("Step 1");
         const docRef = query(userCollection, where("UserID", "==", userID));
         try {
             onSnapshot(docRef, async (querySnapshot) => {
+                console.log("Step 2");
                 querySnapshot.docs.map(async (doc) => {
                     subcollectionRef = collection(doc.ref, "notifications");
                     subcollectionQuery = query(
@@ -273,8 +275,11 @@ export function UserAuthContextProvider({ children }) {
                         where("UserID", "==", userID)
                     );
                 })
+                console.log("Step 3");
                 const subcollectionNotification = await getDocs(subcollectionQuery);
+                console.log("Step 4");
                 subcollectionNotification.forEach((subDoc) => {
+                    console.log("Step 5");
                     let data = subDoc.data();
                     notifications.push({
                         DateOfNotification: data.DateOfNotification,
@@ -283,9 +288,10 @@ export function UserAuthContextProvider({ children }) {
                         isViewed: data.isViewed
                     });
                 });
+                console.log("Step 6");
+                console.log(notifications);
+                return Promise.all(notifications);
             })
-            console.log(notifications);
-            return Promise.resolve(notifications);
         } catch (error) {
             console.log(error);
         }
