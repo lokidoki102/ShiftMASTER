@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -263,34 +263,31 @@ export function UserAuthContextProvider({ children }) {
         let notifications = [];
         let subcollectionRef;
         let subcollectionQuery;
-        console.log("Step 1");
-        const docRef = query(userCollection, where("UserID", "==", userID));
         try {
-            onSnapshot(docRef, async (querySnapshot) => {
-                console.log("Step 2");
-                querySnapshot.docs.map(async (doc) => {
-                    subcollectionRef = collection(doc.ref, "notifications");
-                    subcollectionQuery = query(
-                        subcollectionRef,
-                        where("UserID", "==", userID)
-                    );
-                })
-                console.log("Step 3");
-                const subcollectionNotification = await getDocs(subcollectionQuery);
-                console.log("Step 4");
-                subcollectionNotification.forEach((subDoc) => {
-                    console.log("Step 5");
-                    let data = subDoc.data();
-                    notifications.push({
-                        DateOfNotification: data.DateOfNotification,
-                        Notification: data.Notification,
-                        UserID: data.UserID,
-                        isViewed: data.isViewed
+            return new Promise((resolve) => {
+                const docRef = query(userCollection, where("UserID", "==", userID));
+                onSnapshot(docRef, async (querySnapshot) => {
+                    querySnapshot.docs.map(async (doc) => {
+                        subcollectionRef = collection(doc.ref, "notifications");
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", userID)
+                        );
+                    })
+                    const subcollectionNotification = await getDocs(subcollectionQuery);
+                    subcollectionNotification.forEach((subDoc) => {
+                        let data = subDoc.data();
+                        if (data.isViewed === false) {
+                            notifications.push({
+                                DateOfNotification: data.DateOfNotification,
+                                Notification: data.Notification,
+                                UserID: data.UserID,
+                                isViewed: data.isViewed
+                            });
+                        }
                     });
-                });
-                console.log("Step 6");
-                console.log(notifications);
-                return Promise.all(notifications);
+                    resolve(notifications);
+                })
             })
         } catch (error) {
             console.log(error);
