@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, QuerySnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -290,48 +290,39 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
-    function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
+    async function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
-        return createUserWithEmailAndPassword(auth, email, password).then((result) => {
-            const user = result.user;
-            const userID = user.uid;
-            const companyCode = companyCodeGenerator(companyName);
-            authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then((docRef) => {
-                    // Codes for referencing from User to Notification 
-                    const userRef = doc(db, "users", docRef.id);
-                    const notificationRef = collection(userRef, "notifications");
-                    //
-                    addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
-                });
-            })
-        });
+        try {
+            return createUserWithEmailAndPassword(auth, email, password).then(async (result) => {
+                const user = result.user;
+                const userID = user.uid;
+                const companyCode = companyCodeGenerator(companyName);
+                await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                    console.log("First Step");
+                    await addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                        console.log("Second Step");
+                        // Codes for referencing from User to Notification
+                        const userRef = doc(db, "users", docRef.id);
+                        const notificationRef = collection(userRef, "notifications");
+                        //
+                        await addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
+                        console.log("Third Step");
+                    });
+                })
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
     async function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using Google email (seperate manager and employee role)
-        // This function works in the absolutely wrong way, idk how to do :(
         console.log("Entered Sign Up (Google Email)");
         try {
-            /*return Promise.all(onAuthStateChanged(auth, async (user) => {
+            return onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     const companyCode = companyCodeGenerator(companyName);
                     await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
-                        await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
-                            // Codes for referencing from User to Notification 
-                            const userRef = doc(db, "users", docRef.id);
-                            const notificationRef = collection(userRef, "notifications");
-                            // 
-                            addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
-                        });
-                    })
-                }
-                window.open("/home", "_self");
-            }));*/
-            return onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    const companyCode = companyCodeGenerator(companyName);
-                    authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
                         console.log("First Step");
                         await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
                             console.log("Second Step");
