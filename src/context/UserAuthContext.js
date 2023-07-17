@@ -321,24 +321,29 @@ export function UserAuthContextProvider({ children }) {
     async function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using Google email (seperate manager and employee role)
         console.log("Entered Sign Up (Google Email)");
+        let result = false;
         try {
-            return onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    const companyCode = companyCodeGenerator(companyName);
-                    await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
-                        console.log("First Step");
-                        await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
-                            console.log("Second Step");
-                            // Codes for referencing from User to Notification 
-                            const userRef = doc(db, "users", docRef.id);
-                            const notificationRef = collection(userRef, "notifications");
-                            // 
-                            await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
-                            console.log("Third Step");
-                        });
-                    })
-                }
-            });
+            return new Promise((resolve) => {
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        const companyCode = companyCodeGenerator(companyName);
+                        await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                            console.log("First Step");
+                            await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                                console.log("Second Step");
+                                // Codes for referencing from User to Notification 
+                                const userRef = doc(db, "users", docRef.id);
+                                const notificationRef = collection(userRef, "notifications");
+                                // 
+                                await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
+                                console.log("Third Step");
+                            });
+                        })
+                        result = true;
+                        resolve(result);
+                    }
+                });
+            })
         } catch (error) {
             console.log(error);
         }
