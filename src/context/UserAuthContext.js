@@ -9,7 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -17,7 +17,7 @@ const companyCodeCollection = collection(db, "companies");
 
 export function UserAuthContextProvider({ children }) {
     const [user, setUser] = useState({});
-    const [loading, setLoading] = useState(true); // loading state
+    const [loading, setLoading] = useState(true); // Loading State
 
     function companyCodeGenerator(companyName) {
         // Generate unique company codes upon signing up by the Manager and store company codes into companyCodeCollection
@@ -73,6 +73,14 @@ export function UserAuthContextProvider({ children }) {
                 await updateDoc(newRef, {
                     UserName: name,
                     UserPhoneNumber: phoneNumber
+                }).then(() => {
+                    const notificationRef = collection(newRef, "notifications");
+                    addDoc(notificationRef, {
+                        DateOfNotification: new Date(),
+                        Notification: "You have updated your user profile.",
+                        UserID: userId,
+                        isViewed: false
+                    })
                 });
             })
             return Promise.resolve(data);
@@ -96,30 +104,46 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
-    async function approveEmployees(allEmployees) {
-        // Approve Employees that is selected in the checkbox
+    async function approveEmployees(allEmployees, oneUser) {
+        // Approve Employees that is selected in the checkbox.
         try {
+            let arrayOfName = new Array();
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Approval") {
-                    const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
-                    const docSnap = await getDocs(docRef);
+                    const userId = allEmployees[i].UserID;
+                    arrayOfName.push(allEmployees[i].UserName);
+                    const docRefs = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
+                    const docSnap = await getDocs(docRefs);
                     docSnap.forEach(async (oneDoc) => {
-                        const newRef = doc(db, "users", oneDoc.id);
-                        await updateDoc(newRef, {
+                        const userRef = doc(db, "users", oneDoc.id);
+                        await updateDoc(userRef, {
                             Status: "Approved"
+                        }).then(() => {
+                            // Sending notifications to employee that they have been approved.
+                            const notificationRef = collection(userRef, "notifications");
+                            addDoc(notificationRef, {
+                                DateOfNotification: new Date(),
+                                Notification: "You have been approved! You can start to suggest your preferred working timing.",
+                                UserID: userId,
+                                isViewed: false
+                            })
                         });
                     })
                 }
             }
+            // Sending notification to manager which employees they have approved
+            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Approved");
         } catch (error) {
             console.log(error);
         }
     }
-    async function deleteEmployees(allEmployees) {
+    async function deleteEmployees(allEmployees, oneUser) {
         // Delete Employees that is selected in the checkbox
         try {
+            let arrayOfName = new Array();
             for (var i = 0; i < allEmployees.length; i++) {
                 if (allEmployees[i].Status === "Pending Deletion") {
+                    arrayOfName.push(allEmployees[i].UserName);
                     const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
                     const docSnap = await getDocs(docRef);
                     docSnap.forEach(async (oneDoc) => {
@@ -128,9 +152,33 @@ export function UserAuthContextProvider({ children }) {
                     })
                 }
             }
+            // Sending notification to manager which employees they have removed
+            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Delete");
         } catch (error) {
             console.log(error);
         }
+    }
+    async function sendNotificationToManager(arrayOfName, userID, typeOfNotification) {
+        // Choose which notifcation message to send to Manager
+        let strOfName = arrayOfName.join(", ");
+        let notificationAnswer;
+        if (typeOfNotification === "Approved") {
+            notificationAnswer = "You have approved " + strOfName + " to the team.";
+        } else if (typeOfNotification === "Delete") {
+            notificationAnswer = "You have removed " + strOfName + " from the team.";
+        }
+        const docRefUser = query(userCollection, where("UserID", "==", userID));
+        const docSnapUser = await getDocs(docRefUser);
+        docSnapUser.forEach(async (oneDoc) => {
+            const newRef = doc(db, "users", oneDoc.id);
+            const notificationRef = collection(newRef, "notifications");
+            addDoc(notificationRef, {
+                DateOfNotification: new Date(),
+                Notification: notificationAnswer,
+                UserID: userID,
+                isViewed: false
+            })
+        })
     }
     async function authenticateUserToCompany(uniqueCode, companyName) {
         // Get the Company Name from the Unique Code (in case some companies name are identical)
@@ -188,29 +236,115 @@ export function UserAuthContextProvider({ children }) {
         }
         return data;
     }
-    function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
+    function assignNotification(userID, uniqueCode, companyCode) {
+        // Assign notifications based on the role; Employee/Manager
+        let data = {};
+        const todayDate = new Date();
+        if (uniqueCode === "") {
+            data = {
+                UserID: userID,
+                DateOfNotification: todayDate,
+                Notification: "You have successfully signed up as a Manager! This will be your unique code: " + companyCode + ".",
+                isViewed: false
+            }
+        } else {
+            data = {
+                UserID: userID,
+                DateOfNotification: todayDate,
+                Notification: "You have successfully signed up as an Employee! Please wait for your manager approval.",
+                isViewed: false
+            }
+        }
+        return data;
+    }
+    async function getNotifications(userID) {
+        // Get all Notifications from specific ID and display in the Home Page
+        console.log("Getting Notifications for User")
+        let notifications = [];
+        let subcollectionRef;
+        let subcollectionQuery;
+        console.log("Step 1");
+        const docRef = query(userCollection, where("UserID", "==", userID));
+        try {
+            onSnapshot(docRef, async (querySnapshot) => {
+                console.log("Step 2");
+                querySnapshot.docs.map(async (doc) => {
+                    subcollectionRef = collection(doc.ref, "notifications");
+                    subcollectionQuery = query(
+                        subcollectionRef,
+                        where("UserID", "==", userID)
+                    );
+                })
+                console.log("Step 3");
+                const subcollectionNotification = await getDocs(subcollectionQuery);
+                console.log("Step 4");
+                subcollectionNotification.forEach((subDoc) => {
+                    console.log("Step 5");
+                    let data = subDoc.data();
+                    notifications.push({
+                        DateOfNotification: data.DateOfNotification,
+                        Notification: data.Notification,
+                        UserID: data.UserID,
+                        isViewed: data.isViewed
+                    });
+                });
+                console.log("Step 6");
+                console.log(notifications);
+                return Promise.all(notifications);
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    async function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
-        return createUserWithEmailAndPassword(auth, email, password).then((result) => {
-            const user = result.user;
-            const userID = user.uid;
-            const companyCode = companyCodeGenerator(companyName);
-            authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
-            })
-        });
+        try {
+            return createUserWithEmailAndPassword(auth, email, password).then(async (result) => {
+                const user = result.user;
+                const userID = user.uid;
+                const companyCode = companyCodeGenerator(companyName);
+                await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                    console.log("First Step");
+                    await addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                        console.log("Second Step");
+                        // Codes for referencing from User to Notification
+                        const userRef = doc(db, "users", docRef.id);
+                        const notificationRef = collection(userRef, "notifications");
+                        //
+                        await addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
+                        console.log("Third Step");
+                    });
+                })
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
-    function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
+    async function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using Google email (seperate manager and employee role)
         console.log("Entered Sign Up (Google Email)");
-        return onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const companyCode = companyCodeGenerator(companyName);
-                authenticateUserToCompany(uniqueCode, companyName).then((companyConfirmName) => {
-                    addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode))
-                })
-            }
-        });
+        try {
+            return onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const companyCode = companyCodeGenerator(companyName);
+                    await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                        console.log("First Step");
+                        await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                            console.log("Second Step");
+                            // Codes for referencing from User to Notification 
+                            const userRef = doc(db, "users", docRef.id);
+                            const notificationRef = collection(userRef, "notifications");
+                            // 
+                            await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
+                            console.log("Third Step");
+                        });
+                    })
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
     }
     function logIn(email, password) {
         // Log In using normal email and password
@@ -271,7 +405,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, loading }}>
             {children}
         </userAuthContext.Provider>
     );

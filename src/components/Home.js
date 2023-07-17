@@ -1,28 +1,39 @@
 import React, { useEffect, useState } from "react";
+import { Button } from "react-bootstrap";
 import { useUserAuth } from "../context/UserAuthContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/free-solid-svg-icons'
+import { auth } from "../firebase";
 
 const Home = () => {
-    const { user, getUserProfile } = useUserAuth();
-    const [oneUser, setUsers] = useState([]);
+    const { user, getNotifications } = useUserAuth();
+    const [allNotifications, setAllNotifications] = useState([]);
+    const [loggedIn, setLoggedIn] = useState();
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            setLoggedIn(true);
+        } else {
+            setLoggedIn(false);
+        }
+    })
 
     useEffect(() => {
-        const getUser = async () => {
-            const oneUser = await getUserProfile(user.uid);
-            setUsers(oneUser);
+        if (loggedIn !== undefined) {
+            if (loggedIn === true) {
+                const getAllNotifications = async () => {
+                    const Notifications = await getNotifications(user.uid);
+                    setAllNotifications(Notifications);
+                }
+                getAllNotifications();
+            }
         }
-        getUser();
-    }, []);
+    }, [loggedIn]);
+
+    console.log(allNotifications);
 
     return (
         <>
             <div class="container">
-                <div class="row">
-                    <div class="d-flex justify-content-center">
-                        <h3 class="headerForDash">Welcome, {oneUser.UserName}!</h3>
-                    </div>
-                </div>
                 <div class="row">
                     <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
                         <h3 class="headerForDash" style={{ color: '#00186C' }}><FontAwesomeIcon icon={faFlag} /> Upcoming Shifts</h3>
@@ -39,15 +50,18 @@ const Home = () => {
                             </ol>
                         </div>
                     </div>
-
-                    <div class="col-md-4 boxDashboard" style={{ padding: '40px' }}>
+                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative' }}>
                         <h3 class="headerForDash" style={{ color: '#40006C' }}><FontAwesomeIcon icon={faBell} /> Notifications</h3>
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
-                                <li class="list-group-item">A list item</li>
-
+                                {allNotifications && allNotifications.map((perNotification) =>
+                                    <li class="list-group-item">{perNotification.Notification}</li>
+                                )}
                             </ul>
                         </div>
+                        <Button id="notificationButton" variant="light" type="Submit">
+                            Mark all as read
+                        </Button>
                     </div>
                     <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
                         <h3 class="headerForDash" style={{ color: '#6C0000' }}><FontAwesomeIcon icon={faExclamationTriangle} /> Priority Shifts</h3>
