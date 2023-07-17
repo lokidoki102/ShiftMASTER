@@ -223,6 +223,12 @@ body {
     overflow: scroll;
 }
 
+.list-group {
+    width: 100%;
+    max-height: 250px;
+    overflow: scroll;
+}
+
 .boxDashboard {
     border-style: solid;
     border-color: white;
