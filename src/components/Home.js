@@ -18,18 +18,20 @@ const Home = () => {
     })
 
     useEffect(() => {
-        if (loggedIn !== undefined) {
-            if (loggedIn === true) {
-                const getAllNotifications = async () => {
-                    const Notifications = await getNotifications(user.uid);
-                    setAllNotifications(Notifications);
+        try {
+            (async () => {
+                if (loggedIn !== undefined) {
+                    if (loggedIn === true) {
+                        await getNotifications(user.uid).then((result) => {
+                            setAllNotifications(result);
+                        });
+                    }
                 }
-                getAllNotifications();
-            }
+            })();
+        } catch (error) {
+            console.log(error);
         }
     }, [loggedIn]);
-
-    console.log(allNotifications);
 
     return (
         <>
