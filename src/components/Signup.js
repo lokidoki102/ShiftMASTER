@@ -27,12 +27,16 @@ const Signup = () => {
                     // Sign Up using normal email (seperate manager and employee role)
                     console.log("Sign Up using Normal Email")
                     await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
+                    navigate("/home");
                 } else {
                     // Sign Up using Google email (seperate manager and employee role)
                     console.log("Sign up using Google Email")
-                    await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode);
+                    await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode).then((result) => {
+                        if (result === true) {
+                            navigate("/home");
+                        }
+                    });
                 }
-                navigate("/home");
             } else {
                 setError("The unique code does not exist in the database. Please try again!");
                 e.target.reset();
