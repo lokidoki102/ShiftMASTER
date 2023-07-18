@@ -15,7 +15,8 @@ import {
   doc,
   collectionGroup,
   getDocs,
-  deleteDoc,
+  writeBatch,
+  commitBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -88,6 +89,10 @@ const MyCalendar = () => {
 
   useEffect(() => {
     retrieveShift(16, 16);
+
+    if (role == "Manager") {
+      // show confirm all button
+    }
   }, []);
 
   const retrieveShift = (min, max) => {
@@ -158,7 +163,9 @@ const MyCalendar = () => {
 
           subcollectionSnapshot.forEach((subdoc) => {
             const shiftData = subdoc.data();
+            console.log("The main document id is: ");
             fetchedShifts.push({
+              userDocID: subdoc.ref.parent.parent.id,
               id: subdoc.id,
               UserID: shiftData.UserID,
               title: shiftData.title,
@@ -390,7 +397,7 @@ const MyCalendar = () => {
       }
 
       // Refresh the shifts
-        retrieveShift(1, 1);
+      retrieveShift(1, 1);
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -425,6 +432,25 @@ const MyCalendar = () => {
     }
   };
 
+  // confirm all the shifts for the particular day
+  const confirmAllShifts = async () => {
+    const batch = writeBatch(db);
+    // const batch = db.batch();
+
+    // iterate through the shifts get all the shifts in this particular day
+    shifts.forEach((shift) => {
+        const shiftRef = doc(db, 'users', shift.userDocID, 'shifts', shift.id);
+      console.log("updating this shift ref id:", shift.id);
+      const updatedShiftData = {
+        isConfirmed: true,
+      };
+      batch.update(shiftRef, updatedShiftData);
+      // batch.set(shiftRef, updatedShiftData);
+    });
+
+    await batch.commit();
+  };
+
   // Event listener for dropdown for employee's name
   const handleDropdownChange = (event) => {
     setSelectedValue(event.target.value);
@@ -454,6 +480,9 @@ const MyCalendar = () => {
           alignItems: "center",
         }}
       />
+      <button onClick={() => confirmAllShifts(shifts)}>
+        Confirm All Shifts
+      </button>
 
       <Modal
         show={showModal}
