@@ -384,9 +384,8 @@ const MyCalendar = () => {
       // Refresh the shifts in the calendar
       const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
       newArray.push(updatedShift); // add the shift that was updated into the new array
-      setNewShift(newArray);
+      setShifts(newArray);
     
-    //   retrieveShift(1, 1);
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -410,8 +409,13 @@ const MyCalendar = () => {
       // Update the shift in Firestore
       await updateDoc(shiftRef, updatedShift);
 
-      // Refresh the shifts
-      retrieveShift(1, 1);
+      // Refresh the shifts in the calendar
+      console.log("Removing from array:", updatedShift.id);
+      const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
+      setShifts(newArray);
+      newArray.forEach((shift) => {
+        console.log(shift.id);
+      })
     } catch (error) {
       console.error("Error deleting event:", error);
     }
