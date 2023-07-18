@@ -381,8 +381,12 @@ const MyCalendar = () => {
         await updateDoc(shiftsCollectionRef, updatedShift);
       }
 
-      // Refresh the shifts
-      retrieveShift(1, 1);
+      // Refresh the shifts in the calendar
+      const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
+      newArray.push(updatedShift); // add the shift that was updated into the new array
+      setNewShift(newArray);
+    
+    //   retrieveShift(1, 1);
     } catch (error) {
       console.error("Error updating event:", error);
     }
