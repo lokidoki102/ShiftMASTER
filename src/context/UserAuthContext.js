@@ -286,7 +286,43 @@ export function UserAuthContextProvider({ children }) {
                             });
                         }
                     });
+                    console.log(notifications);
                     resolve(notifications);
+                })
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    async function updateNotificationView(userID) {
+        // Update Notification View after clicking on "Mark All As Read" Button
+        console.log("Entered Mark All As Read Button");
+        let confirmation = false;
+        let subcollectionRef;
+        let subcollectionQuery;
+        try {
+            return new Promise((resolve) => {
+                const docRef = query(userCollection, where("UserID", "==", userID));
+                onSnapshot(docRef, async (querySnapshot) => {
+                    querySnapshot.docs.map(async (doc) => {
+                        subcollectionRef = collection(doc.ref, "notifications");
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", userID)
+                        );
+                    })
+                    const subcollectionNotification = await getDocs(subcollectionQuery);
+                    subcollectionNotification.forEach(async (subDoc) => {
+                        let data = subDoc.data();
+                        if (data.isViewed === false) {
+                            await updateDoc(subDoc.ref, {
+                                isViewed: true
+                            })
+                        }
+
+                    });
+                    confirmation = true;
+                    resolve(confirmation);
                 })
             })
         } catch (error) {
@@ -296,24 +332,26 @@ export function UserAuthContextProvider({ children }) {
     async function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
+        let confirmation = false;
         try {
-            return createUserWithEmailAndPassword(auth, email, password).then(async (result) => {
-                const user = result.user;
-                const userID = user.uid;
-                const companyCode = companyCodeGenerator(companyName);
-                await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
-                    console.log("First Step");
-                    await addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
-                        console.log("Second Step");
-                        // Codes for referencing from User to Notification
-                        const userRef = doc(db, "users", docRef.id);
-                        const notificationRef = collection(userRef, "notifications");
-                        //
-                        await addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
-                        console.log("Third Step");
-                    });
-                })
-            });
+            return new Promise((resolve) => {
+                createUserWithEmailAndPassword(auth, email, password).then(async (result) => {
+                    const user = result.user;
+                    const userID = user.uid;
+                    const companyCode = companyCodeGenerator(companyName);
+                    await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
+                        await addDoc(userCollection, assignRoles(userID, email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
+                            // Codes for referencing from User to Notification
+                            const userRef = doc(db, "users", docRef.id);
+                            const notificationRef = collection(userRef, "notifications");
+                            //
+                            await addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
+                        });
+                    })
+                    confirmation = true;
+                    resolve(confirmation);
+                });
+            })
         } catch (error) {
             console.log(error);
         }
@@ -328,15 +366,12 @@ export function UserAuthContextProvider({ children }) {
                     if (user) {
                         const companyCode = companyCodeGenerator(companyName);
                         await authenticateUserToCompany(uniqueCode, companyName).then(async (companyConfirmName) => {
-                            console.log("First Step");
                             await addDoc(userCollection, assignRoles(user.uid, user.email, name, phoneNumber, companyConfirmName, uniqueCode, companyCode)).then(async (docRef) => {
-                                console.log("Second Step");
                                 // Codes for referencing from User to Notification 
                                 const userRef = doc(db, "users", docRef.id);
                                 const notificationRef = collection(userRef, "notifications");
                                 // 
                                 await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
-                                console.log("Third Step");
                             });
                         })
                         result = true;
@@ -407,7 +442,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, loading }}>
             {children}
         </userAuthContext.Provider>
     );
