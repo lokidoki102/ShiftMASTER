@@ -263,7 +263,7 @@ const MyCalendar = () => {
   };
 
   // triggered when slot/s from day/week view is selected
-  const onSelectSlot = async ({ id, start, end, userDocID }) => {
+  const onSelectSlot = async ({ id, start, end }) => {
     // if user is not approved, show warning
     if (role == "Employee" && isApproved == "Not Approved") {
       // show a warning message
@@ -278,7 +278,6 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
-        userDocID,
         UniqueCode: uniqueCode,
         title: name,
         start,
@@ -293,7 +292,14 @@ const MyCalendar = () => {
   };
 
   // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end, isConfirmed, UserID, userDocID}) => {
+  const onSelectEvent = ({
+    id,
+    start,
+    end,
+    isConfirmed,
+    UserID,
+    userDocID,
+  }) => {
     console.log("(onSelectEvent)ID: " + id);
     console.log("(onSelectEvent)UserID: " + UserID);
     console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
@@ -329,13 +335,9 @@ const MyCalendar = () => {
         newShift.title = title;
       }
 
-      // Add new document to the shifts subcollection
-      addDoc(shiftsCollectionRef, newShift).catch((error) => {
-        console.error("Error adding shift document:", error);
-      });
+      // Add new document to the shifts subcollection and add the item in the calendar (client side)
+      addDoc(shiftsCollectionRef, newShift).then(shifts.push(newShift));
 
-      // Refresh the shifts
-      retrieveShift(1, 1);
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -390,9 +392,16 @@ const MyCalendar = () => {
     try {
       handleClose();
       updatedShift.isVisible = false; // Set isVisible to false
+
       // Reference to this user's shifts subcollection
       console.log("Deleting", updatedShift.userDocID);
-      const shiftRef = doc(db, "users", updatedShift.userDocID, "shifts", updatedShift.id);
+      const shiftRef = doc(
+        db,
+        "users",
+        updatedShift.userDocID,
+        "shifts",
+        updatedShift.id
+      );
 
       // Update the shift in Firestore
       await updateDoc(shiftRef, updatedShift);
@@ -434,6 +443,9 @@ const MyCalendar = () => {
   // Event listener for dropdown for employee's name
   const handleDropdownChange = (event) => {
     setSelectedValue(event.target.value);
+    newShift.title = employees.find(
+      (employee) => employee.id === event.target.value
+    ).name;
   };
 
   return (
