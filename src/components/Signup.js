@@ -26,8 +26,11 @@ const Signup = () => {
                 if (user === null) {
                     // Sign Up using normal email (seperate manager and employee role)
                     console.log("Sign Up using Normal Email")
-                    await signUp(email, password, name, phoneNumber, companyName, uniqueCode);
-                    navigate("/home");
+                    await signUp(email, password, name, phoneNumber, companyName, uniqueCode).then((result) => {
+                        if (result === true) {
+                            navigate("/home");
+                        }
+                    });
                 } else {
                     // Sign Up using Google email (seperate manager and employee role)
                     console.log("Sign up using Google Email")

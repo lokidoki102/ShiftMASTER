@@ -6,9 +6,10 @@ import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/
 import { auth } from "../firebase";
 
 const Home = () => {
-    const { user, getNotifications } = useUserAuth();
+    const { user, getNotifications, updateNotificationView } = useUserAuth();
     const [allNotifications, setAllNotifications] = useState([]);
     const [loggedIn, setLoggedIn] = useState();
+    const [disabled, setDisabled] = useState(true);
     auth.onAuthStateChanged((user) => {
         if (user) {
             setLoggedIn(true);
@@ -23,6 +24,9 @@ const Home = () => {
                 if (loggedIn !== undefined) {
                     if (loggedIn === true) {
                         await getNotifications(user.uid).then((result) => {
+                            if(result.length !== 0){
+                                setDisabled(false);
+                            }
                             setAllNotifications(result);
                         });
                     }
@@ -32,6 +36,21 @@ const Home = () => {
             console.log(error);
         }
     }, [loggedIn]);
+
+    const markAllAsRead = async () => {
+        try {
+            await updateNotificationView(user.uid).then(async (result) => {
+                if(result === true){
+                    await getNotifications(user.uid).then((result) => {
+                        setAllNotifications(result);
+                        setDisabled(true);
+                    });
+                }
+            });
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     return (
         <>
@@ -61,9 +80,12 @@ const Home = () => {
                                         {perNotification.Timestamp.toDate().toJSON().slice(0, 10) + " (" + perNotification.Timestamp.toDate().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) + "): " + perNotification.Notification}
                                     </li>
                                 )}
+                                {allNotifications.length === 0 && 
+                                    <li class="list-group-item">There is currently no notification.</li>
+                                }
                             </ul>
                         </div>
-                        <Button id="notificationButton" variant="light" type="Submit">
+                        <Button id="notificationButton" variant="light" type="Submit" onClick={markAllAsRead} disabled={disabled}>
                             Mark all as read
                         </Button>
                     </div>
