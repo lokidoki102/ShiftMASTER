@@ -141,7 +141,7 @@ const MyCalendar = () => {
           }
           // Manager: Show all the shifts under the company
           else if (role == "Manager") {
-            //TODO show all shifts
+            // show all shifts
             subcollectionRef = collectionGroup(db, "shifts");
 
             subcollectionQuery = query(
@@ -263,7 +263,7 @@ const MyCalendar = () => {
   };
 
   // triggered when slot/s from day/week view is selected
-  const onSelectSlot = async ({ id, start, end }) => {
+  const onSelectSlot = async ({ id, start, end, userDocID }) => {
     // if user is not approved, show warning
     if (role == "Employee" && isApproved == "Not Approved") {
       // show a warning message
@@ -278,6 +278,7 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
+        userDocID,
         UniqueCode: uniqueCode,
         title: name,
         start,
@@ -292,7 +293,7 @@ const MyCalendar = () => {
   };
 
   // triggered when a shift from the calendar is selected
-  const onSelectEvent = ({ id, start, end, isConfirmed, UserID }) => {
+  const onSelectEvent = ({ id, start, end, isConfirmed, UserID, userDocID}) => {
     console.log("(onSelectEvent)ID: " + id);
     console.log("(onSelectEvent)UserID: " + UserID);
     console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
@@ -300,6 +301,7 @@ const MyCalendar = () => {
     setStart(start);
     setEnd(end);
     setNewShift({
+      userDocID,
       id,
       UniqueCode: uniqueCode,
       title: name,
@@ -339,23 +341,9 @@ const MyCalendar = () => {
     }
   };
 
-  //TODO When the manager selects a name from the dropdown
-  // it should use that selected userID
-  // 1) So what would happen if I change the name from employee 1 to
-  // employee 2?
-  // --> That should delete the existing document from employee 1 and make a new one for employee 2
-  // 2) So how do I know if there's a change in the selected employee?
-  // -->
-  // updating a selected shift in the firebase
   const saveShift = async (updatedShift) => {
     try {
       handleClose();
-      //TODO a problem with this userID, if the manager is the one editing, then the manager's userID would be used instead. This should not be the case.
-      // --> Possible solution would be to setUserID on select event too.
-      // --> This way, I can keep track of whose shift was selected and update accordingly.
-      // --> I can also compare the current userID vs the selectedUserID
-      // -----> If it's different then I should do the deletion and creation of a new shift as per mentioned above.
-
       // Reference to this user's document
       const userRef = doc(db, "users", currentUserDocID);
       // Reference to this user's shifts subcollection
@@ -369,10 +357,6 @@ const MyCalendar = () => {
         // delete the previous document using the old userid
         await deleteShift(updatedShift);
         // make a new document using the new userid
-        // setNewShift((original) => ({
-        //     ...original,
-        //     UserID: selectedValue,
-        //   }));
         console.log("DATA INCOMING");
         console.log(updatedShift);
         updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
@@ -406,23 +390,12 @@ const MyCalendar = () => {
     try {
       handleClose();
       updatedShift.isVisible = false; // Set isVisible to false
-      let userRef = null;
-      const querySnapshot = await getDocs(collection(db, "users"));
-      querySnapshot.forEach((doc) => {
-        if (doc.data().UserID === updatedShift.UserID) {
-          // Reference to this user document
-          userRef = doc.ref;
-        }
-      });
-      // Reference to this user's document
-      //   const userRef = doc(db, "users", updatedShift.UserID);
       // Reference to this user's shifts subcollection
-      const shiftsCollectionRef = doc(
-        collection(userRef, "shifts"),
-        updatedShift.id
-      );
+      console.log("Deleting", updatedShift.userDocID);
+      const shiftRef = doc(db, "users", updatedShift.userDocID, "shifts", updatedShift.id);
+
       // Update the shift in Firestore
-      await updateDoc(shiftsCollectionRef, updatedShift);
+      await updateDoc(shiftRef, updatedShift);
 
       // Refresh the shifts
       retrieveShift(1, 1);
@@ -438,8 +411,11 @@ const MyCalendar = () => {
 
     // iterate through the shifts get all the shifts in this particular day
     shifts.forEach((shift) => {
-      // TODO skip if shift does not belong to the current day
-      if (shift.isConfirmed || !moment(shift.start).isSame(selectedDate, 'day')){
+      //  skip if shift does not belong to the current day
+      if (
+        shift.isConfirmed ||
+        !moment(shift.start).isSame(selectedDate, "day")
+      ) {
         console.log("Skipping this shift id", shift.id);
         return;
       }
