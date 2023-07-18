@@ -163,7 +163,6 @@ const MyCalendar = () => {
 
           subcollectionSnapshot.forEach((subdoc) => {
             const shiftData = subdoc.data();
-            console.log("The main document id is: ");
             fetchedShifts.push({
               userDocID: subdoc.ref.parent.parent.id,
               id: subdoc.id,
@@ -208,7 +207,7 @@ const MyCalendar = () => {
     setEmployees(fetchedEmployees);
   };
 
-  // event handlers for calendar
+  // --- Event handlers for calendar ---
   const onEventDrop = (data) => {
     const { start, end } = data;
     const updatedEvents = [
@@ -239,7 +238,7 @@ const MyCalendar = () => {
   // This method is used for keeping track which day was selected
   // so the right shift can be retrieved later on.
   const onNavigate = (newDate) => {
-    // console.log(newDate);
+    console.log(newDate);
     setSelectedDate(newDate);
   };
 
@@ -439,7 +438,12 @@ const MyCalendar = () => {
 
     // iterate through the shifts get all the shifts in this particular day
     shifts.forEach((shift) => {
-        const shiftRef = doc(db, 'users', shift.userDocID, 'shifts', shift.id);
+      // TODO skip if shift does not belong to the current day
+      if (shift.isConfirmed || !moment(shift.start).isSame(selectedDate, 'day')){
+        console.log("Skipping this shift id", shift.id);
+        return;
+      }
+      const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
       console.log("updating this shift ref id:", shift.id);
       const updatedShiftData = {
         isConfirmed: true,
