@@ -55,6 +55,59 @@ const MyCalendar = () => {
     week: true,
     day: true,
   };
+  const [showConfirmBtn, setShowConfirmBtn] = useState(false);
+
+  const CustomToolbar = ({ date, view, onView }) => {
+    const handleViewChange = (newView) => {
+      onView(newView);
+    };
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          marginBottom: "10px",
+        }}
+      >
+        <div>
+          <span className="rbc-toolbar-label">
+            {localizer.format(date, "LLLL yyyy")}
+          </span>
+          <span className="rbc-btn-group" style={{ paddingLeft: "5px" }}>
+            {/* default buttons */}
+            <Button
+              variant={view === "day" ? "dark" : "outline-dark"}
+              onClick={() => handleViewChange("day")}
+            >
+              Day
+            </Button>
+            <Button
+              variant={view === "week" ? "dark" : "outline-dark"}
+              onClick={() => handleViewChange("week")}
+            >
+              Week
+            </Button>
+            <Button
+              variant={view === "month" ? "dark" : "outline-dark"}
+              onClick={() => handleViewChange("month")}
+            >
+              Month
+            </Button>
+          </span>
+        </div>
+
+        <div>
+          {/* Add other custom buttons or actions here */}
+          <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
+            Confirm All Shifts
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   // Modal
   const [showModal, setShowModal] = useState(false);
@@ -89,10 +142,6 @@ const MyCalendar = () => {
 
   useEffect(() => {
     retrieveShift(16, 16);
-
-    if (role == "Manager") {
-      // show confirm all button
-    }
   }, []);
 
   const retrieveShift = (min, max) => {
@@ -250,14 +299,21 @@ const MyCalendar = () => {
       console.log(currentDate.toLocaleString());
       setSelectedDate(currentDate);
       setCurrentView("day");
+
+      if (role === "Manager") {
+        // Show confirm all button
+        setShowConfirmBtn(true);
+      }
     }
 
     if (view === "month") {
-      retrieveShift(16, 16);
+      //   retrieveShift(16, 16);
+      setShowConfirmBtn(false);
       setCurrentView("month");
     }
 
     if (view === "week") {
+      setShowConfirmBtn(false);
       setCurrentView("week");
     }
   };
@@ -337,7 +393,6 @@ const MyCalendar = () => {
 
       // Add new document to the shifts subcollection and add the item in the calendar (client side)
       addDoc(shiftsCollectionRef, newShift).then(shifts.push(newShift));
-
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -385,7 +440,6 @@ const MyCalendar = () => {
       const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
       newArray.push(updatedShift); // add the shift that was updated into the new array
       setShifts(newArray);
-    
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -415,7 +469,7 @@ const MyCalendar = () => {
       setShifts(newArray);
       newArray.forEach((shift) => {
         console.log(shift.id);
-      })
+      });
     } catch (error) {
       console.error("Error deleting event:", error);
     }
@@ -469,6 +523,9 @@ const MyCalendar = () => {
         onNavigate={onNavigate}
         onView={onView}
         views={views}
+        components={{
+          toolbar: CustomToolbar, // Use custom toolbar
+        }}
         // onSelecting={onSelecting}
         onSelectSlot={onSelectSlot}
         onSelectEvent={onSelectEvent}
@@ -480,9 +537,6 @@ const MyCalendar = () => {
           alignItems: "center",
         }}
       />
-      <button onClick={() => confirmAllShifts(shifts)}>
-        Confirm All Shifts
-      </button>
 
       <Modal
         show={showModal}
