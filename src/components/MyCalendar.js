@@ -79,10 +79,10 @@ const MyCalendar = () => {
           <span className="rbc-btn-group" style={{ paddingLeft: "5px" }}>
             {/* default buttons */}
             <Button
-              variant={view === "day" ? "dark" : "outline-dark"}
-              onClick={() => handleViewChange("day")}
+              variant={view === "month" ? "dark" : "outline-dark"}
+              onClick={() => handleViewChange("month")}
             >
-              Day
+              Month
             </Button>
             <Button
               variant={view === "week" ? "dark" : "outline-dark"}
@@ -91,10 +91,10 @@ const MyCalendar = () => {
               Week
             </Button>
             <Button
-              variant={view === "month" ? "dark" : "outline-dark"}
-              onClick={() => handleViewChange("month")}
+              variant={view === "day" ? "dark" : "outline-dark"}
+              onClick={() => handleViewChange("day")}
             >
-              Month
+              Day
             </Button>
           </span>
         </div>
