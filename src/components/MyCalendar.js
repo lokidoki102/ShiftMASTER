@@ -15,6 +15,8 @@ import {
     doc,
     collectionGroup,
     getDocs,
+    writeBatch,
+    commitBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -33,15 +35,79 @@ const localizer = momentLocalizer(moment);
 
 const MyCalendar = () => {
     const { user } = useUserAuth();
-    const [userID, setUserID] = useState("");
+    const [currentUserDocID, setCurrentUserID] = useState(""); // the userID of the one logged in
+    const [selectedValue, setSelectedValue] = useState("");
+    const [name, setName] = useState("");
     const [isApproved, setIsApproved] = useState("");
     const [role, setRole] = useState("");
+    const [CompanyCode, setCompanyCode] = useState("");
     const [shifts, setShifts] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [start, setStart] = useState(new Date()); // the start datetime of the new shift
     const [end, setEnd] = useState(new Date()); // the end datetime of the new shift
     const [newShift, setNewShift] = useState([]); // the new shift created
     const [selectedDate, setSelectedDate] = useState(null); // the clicked date
     const [currentView, setCurrentView] = useState("");
+
+    // Calendar
+    const views = {
+        month: true,
+        week: true,
+        day: true,
+    };
+    const [showConfirmBtn, setShowConfirmBtn] = useState(false);
+
+    const CustomToolbar = ({ date, view, onView }) => {
+        const handleViewChange = (newView) => {
+            onView(newView);
+        };
+
+        return (
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    width: "100%",
+                    marginBottom: "10px",
+                }}
+            >
+                <div>
+                    <span className="rbc-toolbar-label">
+                        {localizer.format(date, "LLLL yyyy")}
+                    </span>
+                    <span className="rbc-btn-group" style={{ paddingLeft: "5px" }}>
+                        {/* default buttons */}
+                        <Button
+                            variant={view === "month" ? "dark" : "outline-dark"}
+                            onClick={() => handleViewChange("month")}
+                        >
+                            Month
+                        </Button>
+                        <Button
+                            variant={view === "week" ? "dark" : "outline-dark"}
+                            onClick={() => handleViewChange("week")}
+                        >
+                            Week
+                        </Button>
+                        <Button
+                            variant={view === "day" ? "dark" : "outline-dark"}
+                            onClick={() => handleViewChange("day")}
+                        >
+                            Day
+                        </Button>
+                    </span>
+                </div>
+
+                <div>
+                    {/* Add other custom buttons or actions here */}
+                    <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
+                        Confirm All Shifts
+                    </Button>
+                </div>
+            </div>
+        );
+    };
 
     // Modal
     const [showModal, setShowModal] = useState(false);
@@ -72,6 +138,7 @@ const MyCalendar = () => {
         }));
         setEnd(date);
     };
+    // ---- end of time picker ----
 
     useEffect(() => {
         retrieveShift(16, 16);
@@ -85,7 +152,7 @@ const MyCalendar = () => {
         queryShifts(initialStartDate, initialEndDate);
     };
 
-    //  Query for shifts
+    // Query for shifts
     const queryShifts = useCallback((start, end) => {
         const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
@@ -96,14 +163,16 @@ const MyCalendar = () => {
 
             await Promise.all(
                 querySnapshot.docs.map(async (doc) => {
-                    setUserID(doc.id.toString());
+                    setCurrentUserID(doc.id.toString());
+                    setName(doc.data().UserName.toString());
                     console.log("Document ID:", doc.id);
                     console.log("Document data:", doc.data());
                     const isApproved = doc.data().Status.toString(); // retrieve status
                     setIsApproved(isApproved);
                     const role = doc.data().Role.toString();
                     setRole(role);
-                    const companyCode = doc.data().CompanyCode.toString();
+                    const CompanyCode = doc.data().CompanyCode.toString();
+                    setCompanyCode(CompanyCode);
                     let subcollectionRef = null;
                     let subcollectionQuery = null;
                     // Employee: Show only his/her own shifts
@@ -121,7 +190,7 @@ const MyCalendar = () => {
                     }
                     // Manager: Show all the shifts under the company
                     else if (role == "Manager") {
-                        //TODO show all shifts
+                        // show all shifts
                         subcollectionRef = collectionGroup(db, "shifts");
 
                         subcollectionQuery = query(
@@ -129,9 +198,11 @@ const MyCalendar = () => {
                             where("start", ">=", start),
                             where("start", "<", end),
                             where("isVisible", "==", true),
-                            where("CompanyCode", "==", companyCode),
+                            where("CompanyCode", "==", CompanyCode),
                             orderBy("start")
                         );
+
+                        queryEmployees(CompanyCode);
                     } else {
                         console.log("Role not found");
                         return;
@@ -142,7 +213,9 @@ const MyCalendar = () => {
                     subcollectionSnapshot.forEach((subdoc) => {
                         const shiftData = subdoc.data();
                         fetchedShifts.push({
+                            userDocID: subdoc.ref.parent.parent.id,
                             id: subdoc.id,
+                            UserID: shiftData.UserID,
                             title: shiftData.title,
                             start: shiftData.start.toDate(),
                             end: shiftData.end.toDate(),
@@ -159,7 +232,31 @@ const MyCalendar = () => {
         return () => unsubscribe();
     }, []);
 
-    // event handlers for calendar
+    // Query for getting employee names
+    const queryEmployees = async (CompanyCode) => {
+        const fetchedEmployees = [];
+        const q = query(
+            collection(db, "users"),
+            where("CompanyCode", "==", CompanyCode)
+        );
+
+        try {
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                const employee = {
+                    id: doc.data().UserID,
+                    name: doc.data().UserName,
+                };
+                fetchedEmployees.push(employee);
+            });
+        } catch (error) {
+            console.error("Error querying employees:", error);
+        }
+
+        setEmployees(fetchedEmployees);
+    };
+
+    // --- Event handlers for calendar ---
     const onEventDrop = (data) => {
         const { start, end } = data;
         const updatedEvents = [
@@ -190,7 +287,7 @@ const MyCalendar = () => {
     // This method is used for keeping track which day was selected
     // so the right shift can be retrieved later on.
     const onNavigate = (newDate) => {
-        // console.log(newDate);
+        console.log(newDate);
         setSelectedDate(newDate);
     };
 
@@ -202,14 +299,21 @@ const MyCalendar = () => {
             console.log(currentDate.toLocaleString());
             setSelectedDate(currentDate);
             setCurrentView("day");
+
+            if (role === "Manager") {
+                // Show confirm all button
+                setShowConfirmBtn(true);
+            }
         }
 
         if (view === "month") {
-            retrieveShift(16, 16);
+            //   retrieveShift(16, 16);
+            setShowConfirmBtn(false);
             setCurrentView("month");
         }
 
         if (view === "week") {
+            setShowConfirmBtn(false);
             setCurrentView("week");
         }
     };
@@ -219,6 +323,7 @@ const MyCalendar = () => {
         // if user is not approved, show warning
         if (role == "Employee" && isApproved == "Not Approved") {
             // show a warning message
+            console.log(isApproved);
             console.log("Not approved... showing warning now");
             setShowToast(true);
             return;
@@ -229,8 +334,8 @@ const MyCalendar = () => {
             setEnd(end);
             handleShow();
             setNewShift({
-                // id,
-                title: "New Shift",
+                CompanyCode: CompanyCode,
+                title: name,
                 start,
                 end,
                 isVisible: true,
@@ -243,21 +348,30 @@ const MyCalendar = () => {
     };
 
     // triggered when a shift from the calendar is selected
-    const onSelectEvent = ({ id, start, end, isConfirmed }) => {
+    const onSelectEvent = ({
+        id,
+        start,
+        end,
+        isConfirmed,
+        UserID,
+        userDocID,
+    }) => {
         console.log("(onSelectEvent)ID: " + id);
+        console.log("(onSelectEvent)UserID: " + UserID);
         console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
         // store selected event's start and end times
         setStart(start);
         setEnd(end);
         setNewShift({
+            userDocID,
             id,
-            title: "New Shift",
+            CompanyCode: CompanyCode,
+            title: name,
             start,
             end,
-            UserID: user.uid,
+            UserID,
             isConfirmed,
         });
-        // console.log(id);
 
         // show modal
         setShowDelete(true);
@@ -265,46 +379,67 @@ const MyCalendar = () => {
     };
 
     // adding shifts into the firebase
-    const createShift = async (newShift) => {
+    const createShift = async (newShift, userDocID, title) => {
         try {
             handleClose();
             // Reference to this user's document
-            const userRef = doc(db, "users", userID);
+            const userRef = doc(db, "users", userDocID);
             // Reference to this user's shifts subcollection
             const shiftsCollectionRef = collection(userRef, "shifts");
 
-            // Add new document to the shifts subcollection
-            addDoc(shiftsCollectionRef, newShift)
-                .then((docRef) => {
-                    console.log("New shift document ID:", docRef.id);
-                })
-                .catch((error) => {
-                    console.error("Error adding shift document:", error);
-                });
+            if (title != "") {
+                newShift.title = title;
+            }
 
-            // Refresh the shifts
-            retrieveShift(1, 1);
+            // Add new document to the shifts subcollection and add the item in the calendar (client side)
+            addDoc(shiftsCollectionRef, newShift).then(shifts.push(newShift));
         } catch (error) {
             console.error("Error adding event:", error);
         }
     };
 
-    // updating a selected shift in the firebase
     const saveShift = async (updatedShift) => {
         try {
             handleClose();
             // Reference to this user's document
-            const userRef = doc(db, "users", userID);
+            const userRef = doc(db, "users", currentUserDocID);
             // Reference to this user's shifts subcollection
             const shiftsCollectionRef = doc(
                 collection(userRef, "shifts"),
                 updatedShift.id
             );
-            // Update the shift in Firestore
-            await updateDoc(shiftsCollectionRef, updatedShift);
 
-            // Refresh the shifts
-            retrieveShift(1, 1);
+            // Compare if there's a change in the selected employee for the shift
+            if (updatedShift.UserID !== selectedValue && updatedShift.UserID != "") {
+                // delete the previous document using the old userid
+                await deleteShift(updatedShift);
+                // make a new document using the new userid
+                console.log("DATA INCOMING");
+                console.log(updatedShift);
+                updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
+                updatedShift.UserID = selectedValue;
+
+                let userDocID = "";
+                let title = "";
+
+                const querySnapshot = await getDocs(collection(db, "users"));
+                querySnapshot.forEach((doc) => {
+                    if (doc.data().UserID === selectedValue) {
+                        // Reference to this user document
+                        userDocID = doc.id;
+                        title = doc.data().UserName;
+                    }
+                });
+                await createShift(updatedShift, userDocID, title);
+            } else {
+                // Update the shift in Firestore
+                await updateDoc(shiftsCollectionRef, updatedShift);
+            }
+
+            // Refresh the shifts in the calendar
+            const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
+            newArray.push(updatedShift); // add the shift that was updated into the new array
+            setShifts(newArray);
         } catch (error) {
             console.error("Error updating event:", error);
         }
@@ -314,21 +449,65 @@ const MyCalendar = () => {
         try {
             handleClose();
             updatedShift.isVisible = false; // Set isVisible to false
-            // Reference to this user's document
-            const userRef = doc(db, "users", userID);
+
             // Reference to this user's shifts subcollection
-            const shiftsCollectionRef = doc(
-                collection(userRef, "shifts"),
+            console.log("Deleting", updatedShift.userDocID);
+            const shiftRef = doc(
+                db,
+                "users",
+                updatedShift.userDocID,
+                "shifts",
                 updatedShift.id
             );
-            // Update the shift in Firestore
-            await updateDoc(shiftsCollectionRef, updatedShift);
 
-            // Refresh the shifts
-            retrieveShift(1, 1);
+            // Update the shift in Firestore
+            await updateDoc(shiftRef, updatedShift);
+
+            // Refresh the shifts in the calendar
+            console.log("Removing from array:", updatedShift.id);
+            const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
+            setShifts(newArray);
+            newArray.forEach((shift) => {
+                console.log(shift.id);
+            });
         } catch (error) {
             console.error("Error deleting event:", error);
         }
+    };
+
+    // confirm all the shifts for the particular day
+    const confirmAllShifts = async () => {
+        const batch = writeBatch(db);
+        // const batch = db.batch();
+
+        // iterate through the shifts get all the shifts in this particular day
+        shifts.forEach((shift) => {
+            //  skip if shift does not belong to the current day
+            if (
+                shift.isConfirmed ||
+                !moment(shift.start).isSame(selectedDate, "day")
+            ) {
+                console.log("Skipping this shift id", shift.id);
+                return;
+            }
+            const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
+            console.log("updating this shift ref id:", shift.id);
+            const updatedShiftData = {
+                isConfirmed: true,
+            };
+            batch.update(shiftRef, updatedShiftData);
+            // batch.set(shiftRef, updatedShiftData);
+        });
+
+        await batch.commit();
+    };
+
+    // Event listener for dropdown for employee's name
+    const handleDropdownChange = (event) => {
+        setSelectedValue(event.target.value);
+        newShift.title = employees.find(
+            (employee) => employee.id === event.target.value
+        ).name;
     };
 
     return (
@@ -345,6 +524,10 @@ const MyCalendar = () => {
                         onEventResize={onEventResize}
                         onNavigate={onNavigate}
                         onView={onView}
+                        views={views}
+                        components={{
+                            toolbar: CustomToolbar, // Use custom toolbar
+                        }}
                         // onSelecting={onSelecting}
                         onSelectSlot={onSelectSlot}
                         onSelectEvent={onSelectEvent}
@@ -370,18 +553,47 @@ const MyCalendar = () => {
                         <Modal.Body>
                             <Form>
                                 <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-                                    <div style={{ display: "flex", alignItems: "center" }}>
-                                        <p style={{ marginRight: "10px" }}>From</p>
-                                        <DateTimePicker onChange={onChangeStart} value={start} />
-                                        <p style={{ marginRight: "10px", marginLeft: "10px" }}>to</p>
-                                        <DateTimePicker onChange={onChangeEnd} value={end} />
-                                    </div>
+                                    <table>
+                                        <tbody>
+                                            <tr>
+                                                <td>Start</td>
+                                                <td>
+                                                    <DateTimePicker onChange={onChangeStart} value={start} />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>End</td>
+                                                <td>
+                                                    <DateTimePicker onChange={onChangeEnd} value={end} />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Name</td>
+                                                <td>
+                                                    <select
+                                                        onChange={handleDropdownChange}
+                                                        defaultValue={newShift.UserID}
+                                                    >
+                                                        <option value="">Select an employee</option>
+                                                        {employees.map((employee) => (
+                                                            <option key={employee.id} value={employee.id}>
+                                                                {employee.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </Form.Group>
                             </Form>
                         </Modal.Body>
                         <Modal.Footer>
                             {showCreate && (
-                                <Button variant="primary" onClick={() => createShift(newShift)}>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => createShift(newShift, currentUserDocID, "")}
+                                >
                                     Add Shift
                                 </Button>
                             )}
