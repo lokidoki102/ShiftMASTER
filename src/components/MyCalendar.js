@@ -58,6 +58,18 @@ const MyCalendar = () => {
   const [showConfirmBtn, setShowConfirmBtn] = useState(false);
   const [showDropDown, setDropDown] = useState(false);
 
+  const shiftStyleGetter = (shift, start, end, isSelected) => {
+    const backgroundColor = shift.isConfirmed ? "#67C381" : "#EC8787";
+    const borderColor = isSelected ? "white" : backgroundColor;
+  
+    return {
+      style: {
+        backgroundColor,
+        borderColor,
+      },
+    };
+  };
+
   const CustomToolbar = ({ date, view, onView }) => {
     const handleViewChange = (newView) => {
       onView(newView);
@@ -103,7 +115,7 @@ const MyCalendar = () => {
         {/* Add other custom buttons or actions here */}
         {true && (
           <div>
-            <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
+            <Button variant="dark" onClick={() => confirmAllShifts()}>
               Confirm All Shifts
             </Button>
           </div>
@@ -236,6 +248,7 @@ const MyCalendar = () => {
         })
       );
       setShifts(fetchedShifts);
+      // console.log("The shifts are:",shifts)
     });
     return () => unsubscribe();
   }, []);
@@ -253,6 +266,7 @@ const MyCalendar = () => {
       querySnapshot.forEach((doc) => {
         const employee = {
           id: doc.data().UserID,
+          docID: doc.id,
           name: doc.data().UserName,
         };
         fetchedEmployees.push(employee);
@@ -489,11 +503,14 @@ const MyCalendar = () => {
 
   // confirm all the shifts for the particular day
   const confirmAllShifts = async () => {
+    console.log("Confirming all shifts...");
     const batch = writeBatch(db);
     // const batch = db.batch();
-
+    console.log(shifts)
+    if (shifts.length == 0 ){}
     // iterate through the shifts get all the shifts in this particular day
     shifts.forEach((shift) => {
+      console.log("iterating...", selectedDate)
       //  skip if shift does not belong to the current day
       if (
         shift.isConfirmed ||
@@ -518,8 +535,11 @@ const MyCalendar = () => {
   const handleDropdownChange = (event) => {
     setSelectedValue(event.target.value);
     newShift.title = employees.find(
-      (employee) => employee.id === event.target.value
+      (employee) => employee.docID === event.target.value
     ).name;
+    newShift.docID = employees.find(
+      (employee) => employee.docID === event.target.value
+    ).docID;
   };
 
   return (
@@ -533,6 +553,7 @@ const MyCalendar = () => {
             endAccessor="end" // Specify the property name for the end date/time
             draggableAccessor={(event) => true}
             onEventDrop={onEventDrop}
+            eventPropGetter={shiftStyleGetter}
             onEventResize={onEventResize}
             onNavigate={onNavigate}
             onView={onView}
@@ -591,7 +612,7 @@ const MyCalendar = () => {
                               >
                                 <option value="">Select an employee</option>
                                 {employees.map((employee) => (
-                                  <option key={employee.id} value={employee.id}>
+                                  <option key={employee.id} value={employee.docID}>
                                     {employee.name}
                                   </option>
                                 ))}
@@ -609,7 +630,7 @@ const MyCalendar = () => {
               {showCreate && (
                 <Button
                   variant="primary"
-                  onClick={() => createShift(newShift, currentUserDocID, "")}
+                  onClick={() => createShift(newShift, newShift.docID, "")}
                 >
                   Add Shift
                 </Button>
