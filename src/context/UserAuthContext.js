@@ -294,6 +294,42 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
+
+    async function getUpcomingShifts(userID) {
+        let upcomingShifts = [];
+        let subcollectionRef;
+        let subcollectionQuery;
+
+        try {
+            return new Promise((resolve) => {
+                const docRef = query(userCollection, where("UserID", "==", userID));
+                onSnapshot(docRef, async (querySnapshot) => {
+                    querySnapshot.docs.map(async (doc) => {
+                        subcollectionRef = collection(doc.ref, "shifts");
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", userID),
+                            where("start", ">=", new Date()),
+                            where("isConfirmed", "==", true),
+                            orderBy("start", "desc")
+                        );
+                    })
+                    const subcollectionShifts = await getDocs(subcollectionQuery);
+                    subcollectionShifts.forEach((subDoc) => {
+                        let shiftData = subDoc.data();
+                        upcomingShifts.push({
+                            start: shiftData.start.toDate(),
+                            end: shiftData.end.toDate(),
+                            });
+                    });
+                    console.log(upcomingShifts);
+                    resolve(upcomingShifts);
+                })
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
     async function updateNotificationView(userID) {
         // Update Notification View after clicking on "Mark All As Read" Button
         console.log("Entered Mark All As Read Button");
@@ -442,7 +478,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, getUpcomingShifts, loading }}>
             {children}
         </userAuthContext.Provider>
     );

@@ -6,8 +6,9 @@ import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/
 import { auth } from "../firebase";
 
 const Home = () => {
-    const { user, getNotifications, updateNotificationView } = useUserAuth();
+    const { user, getNotifications, updateNotificationView, getUpcomingShifts } = useUserAuth();
     const [allNotifications, setAllNotifications] = useState([]);
+    const [allUpcomingShifts, setAllUpcomingShifts] = useState([]);
     const [loggedIn, setLoggedIn] = useState();
     const [disabled, setDisabled] = useState(true);
     auth.onAuthStateChanged((user) => {
@@ -28,6 +29,10 @@ const Home = () => {
                                 setDisabled(false);
                             }
                             setAllNotifications(result);
+                        });
+
+                        await getUpcomingShifts(user.uid).then((result) => {
+                            setAllUpcomingShifts(result);
                         });
                     }
                 }
@@ -60,14 +65,11 @@ const Home = () => {
                         <h3 class="headerForDash" style={{ color: '#00186C' }}><FontAwesomeIcon icon={faFlag} /> Upcoming Shifts</h3>
                         <div class="d-flex justify-content-center">
                             <ol class="list-group list-group-numbered">
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
+                            {allUpcomingShifts && allUpcomingShifts.map((shift) =>
+                                    <li class="list-group-item">
+                                        {"From: " + shift.start.toDate().toJSON().slice(0, 10) + "to: " + shift.end.toDate().toJSON().slice(0, 10)}
+                                    </li>
+                                )}
                             </ol>
                         </div>
                     </div>

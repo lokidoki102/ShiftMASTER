@@ -40,7 +40,7 @@ const MyCalendar = () => {
   const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
-  const [uniqueCode, setUniqueCode] = useState("");
+  const [CompanyCode, setCompanyCode] = useState("");
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
@@ -56,6 +56,7 @@ const MyCalendar = () => {
     day: true,
   };
   const [showConfirmBtn, setShowConfirmBtn] = useState(false);
+  const [showDropDown, setDropDown] = useState(false);
 
   const CustomToolbar = ({ date, view, onView }) => {
     const handleViewChange = (newView) => {
@@ -101,9 +102,13 @@ const MyCalendar = () => {
 
         <div>
           {/* Add other custom buttons or actions here */}
-          <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
-            Confirm All Shifts
-          </Button>
+          {showConfirmBtn && (
+            <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
+              Confirm All Shifts
+            </Button>
+          )
+          }
+
         </div>
       </div>
     );
@@ -171,8 +176,8 @@ const MyCalendar = () => {
           setIsApproved(isApproved);
           const role = doc.data().Role.toString();
           setRole(role);
-          const uniqueCode = doc.data().UniqueCode.toString();
-          setUniqueCode(uniqueCode);
+          const CompanyCode = doc.data().CompanyCode.toString();
+          setCompanyCode(CompanyCode);
           let subcollectionRef = null;
           let subcollectionQuery = null;
           // Employee: Show only his/her own shifts
@@ -198,11 +203,11 @@ const MyCalendar = () => {
               where("start", ">=", start),
               where("start", "<", end),
               where("isVisible", "==", true),
-              where("UniqueCode", "==", uniqueCode),
+              where("CompanyCode", "==", CompanyCode),
               orderBy("start")
             );
 
-            queryEmployees(uniqueCode);
+            queryEmployees(CompanyCode);
           } else {
             console.log("Role not found");
             return;
@@ -233,11 +238,11 @@ const MyCalendar = () => {
   }, []);
 
   // Query for getting employee names
-  const queryEmployees = async (uniqueCode) => {
+  const queryEmployees = async (CompanyCode) => {
     const fetchedEmployees = [];
     const q = query(
       collection(db, "users"),
-      where("UniqueCode", "==", uniqueCode)
+      where("CompanyCode", "==", CompanyCode)
     );
 
     try {
@@ -303,6 +308,7 @@ const MyCalendar = () => {
       if (role === "Manager") {
         // Show confirm all button
         setShowConfirmBtn(true);
+        setDropDown(true);
       }
     }
 
@@ -310,11 +316,13 @@ const MyCalendar = () => {
       //   retrieveShift(16, 16);
       setShowConfirmBtn(false);
       setCurrentView("month");
+      setDropDown(true);
     }
 
     if (view === "week") {
       setShowConfirmBtn(false);
       setCurrentView("week");
+      setDropDown(true);
     }
   };
 
@@ -334,7 +342,7 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
-        UniqueCode: uniqueCode,
+        CompanyCode: CompanyCode,
         title: name,
         start,
         end,
@@ -365,7 +373,7 @@ const MyCalendar = () => {
     setNewShift({
       userDocID,
       id,
-      UniqueCode: uniqueCode,
+      CompanyCode: CompanyCode,
       title: name,
       start,
       end,
@@ -567,22 +575,26 @@ const MyCalendar = () => {
                           <DateTimePicker onChange={onChangeEnd} value={end} />
                         </td>
                       </tr>
-                      <tr>
-                        <td>Name</td>
-                        <td>
-                          <select
-                            onChange={handleDropdownChange}
-                            defaultValue={newShift.UserID}
-                          >
-                            <option value="">Select an employee</option>
-                            {employees.map((employee) => (
-                              <option key={employee.id} value={employee.id}>
-                                {employee.name}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      </tr>
+                      {
+                        showDropDown && (
+                          <tr>
+                            <td>Name</td>
+                            <td>
+                              <select
+                                onChange={handleDropdownChange}
+                                defaultValue={newShift.UserID}
+                              >
+                                <option value="">Select an employee</option>
+                                {employees.map((employee) => (
+                                  <option key={employee.id} value={employee.id}>
+                                    {employee.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        )
+                      }
                     </tbody>
                   </table>
                 </Form.Group>
