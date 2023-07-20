@@ -295,8 +295,8 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
-
     async function getUpcomingShifts(userID) {
+        // Get upcoming shift and display in Dashboard
         let upcomingShifts = [];
         let subcollectionRef;
         let subcollectionQuery;
@@ -317,13 +317,13 @@ export function UserAuthContextProvider({ children }) {
                     const subcollectionShifts = await getDocs(subcollectionQuery);
                     subcollectionShifts.forEach((subDoc) => {
                         let shiftData = subDoc.data();
-                        if (moment(shiftData.start.toDate()).isSameOrAfter(moment().startOf("day"))){
+                        if (moment(shiftData.start.toDate()).isSameOrAfter(moment().startOf("day"))) {
                             upcomingShifts.push({
                                 start: shiftData.start.toDate(),
                                 end: shiftData.end.toDate(),
-                                });
+                            });
                         }
-    
+
                     });
                     console.log(upcomingShifts);
                     resolve(upcomingShifts);
