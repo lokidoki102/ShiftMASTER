@@ -511,7 +511,7 @@ const MyCalendar = () => {
     };
 
     return (
-        <div class="container">
+        <><div class="container">
             <div class="row">
                 <div class="d-flex justify-content-center">
                     <DnDCalendar
@@ -537,8 +537,7 @@ const MyCalendar = () => {
                             width: "1000px",
                             justifyContent: "center",
                             alignItems: "center",
-                        }}
-                    />
+                        }} />
 
                     <Modal
                         show={showModal}
@@ -622,8 +621,7 @@ const MyCalendar = () => {
                                 <img
                                     src="holder.js/20x20?text=%20"
                                     className="rounded me-2"
-                                    alt=""
-                                />
+                                    alt="" />
                                 <strong className="me-auto">Warning</strong>
                             </Toast.Header>
                             <Toast.Body className="bg-danger text-white">
@@ -634,7 +632,8 @@ const MyCalendar = () => {
                 </div>
             </div>
         </div>
+        </>
     );
-}; // end of MyCalendar
+}
 
 export default MyCalendar;
