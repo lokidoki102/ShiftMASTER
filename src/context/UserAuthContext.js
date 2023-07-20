@@ -9,7 +9,8 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
-import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
+import moment from "moment";
+import { Timestamp, collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 
 const userAuthContext = createContext();
 const userCollection = collection(db, "users");
@@ -309,7 +310,6 @@ export function UserAuthContextProvider({ children }) {
                         subcollectionQuery = query(
                             subcollectionRef,
                             where("UserID", "==", userID),
-                            where("start", ">=", new Date()),
                             where("isConfirmed", "==", true),
                             orderBy("start", "desc")
                         );
@@ -317,10 +317,13 @@ export function UserAuthContextProvider({ children }) {
                     const subcollectionShifts = await getDocs(subcollectionQuery);
                     subcollectionShifts.forEach((subDoc) => {
                         let shiftData = subDoc.data();
-                        upcomingShifts.push({
-                            start: shiftData.start.toDate(),
-                            end: shiftData.end.toDate(),
-                            });
+                        if (moment(shiftData.start.toDate()).isSameOrAfter(moment().startOf("day"))){
+                            upcomingShifts.push({
+                                start: shiftData.start.toDate(),
+                                end: shiftData.end.toDate(),
+                                });
+                        }
+    
                     });
                     console.log(upcomingShifts);
                     resolve(upcomingShifts);

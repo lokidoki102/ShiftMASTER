@@ -67,7 +67,7 @@ const Home = () => {
                             <ol class="list-group list-group-numbered">
                             {allUpcomingShifts && allUpcomingShifts.map((shift) =>
                                     <li class="list-group-item">
-                                        {"From: " + shift.start.toDate().toJSON().slice(0, 10) + "to: " + shift.end.toDate().toJSON().slice(0, 10)}
+                                        {"From: " + shift.start.toJSON().slice(0, 10) + " to: " + shift.end.toJSON().slice(0, 10)}
                                     </li>
                                 )}
                             </ol>

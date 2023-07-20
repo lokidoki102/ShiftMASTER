@@ -100,16 +100,17 @@ const MyCalendar = () => {
           </span>
         </div>
 
-        <div>
-          {/* Add other custom buttons or actions here */}
-          {showConfirmBtn && (
+        {/* Add other custom buttons or actions here */}
+        {true && (
+          <div>
             <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
               Confirm All Shifts
             </Button>
-          )
-          }
+          </div>
 
-        </div>
+        )
+        }
+
       </div>
     );
   };
@@ -207,6 +208,8 @@ const MyCalendar = () => {
               orderBy("start")
             );
 
+            setDropDown(true);
+            setShowConfirmBtn(true);
             queryEmployees(CompanyCode);
           } else {
             console.log("Role not found");
@@ -306,6 +309,7 @@ const MyCalendar = () => {
       setCurrentView("day");
 
       if (role === "Manager") {
+        console.log("I AM A MANAGER, OPEN THE DOOR", showConfirmBtn)
         // Show confirm all button
         setShowConfirmBtn(true);
         setDropDown(true);
@@ -314,13 +318,13 @@ const MyCalendar = () => {
 
     if (view === "month") {
       //   retrieveShift(16, 16);
-      setShowConfirmBtn(false);
+      // setShowConfirmBtn(false);
       setCurrentView("month");
       setDropDown(true);
     }
 
     if (view === "week") {
-      setShowConfirmBtn(false);
+      // setShowConfirmBtn(false);
       setCurrentView("week");
       setDropDown(true);
     }
