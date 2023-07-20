@@ -91,7 +91,7 @@ const Home = () => {
                             Mark all as read
                         </Button>
                     </div>
-                    <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
+                    {/* <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
                         <h3 class="headerForDash" style={{ color: '#6C0000' }}><FontAwesomeIcon icon={faExclamationTriangle} /> Priority Shifts</h3>
                         <div class="d-flex justify-content-center">
                             <ol class="list-group list-group-numbered">
@@ -111,7 +111,7 @@ const Home = () => {
                         <div class="d-flex justify-content-center">
 
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </>

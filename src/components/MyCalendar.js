@@ -575,6 +575,7 @@ const MyCalendar = () => {
                           <DateTimePicker onChange={onChangeEnd} value={end} />
                         </td>
                       </tr>
+
                       {
                         showDropDown && (
                           <tr>
