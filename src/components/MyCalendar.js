@@ -71,9 +71,21 @@ const MyCalendar = () => {
     };
   };
 
-  const CustomToolbar = ({ date, view, onView }) => {
+  const CustomToolbar = ({ date, view, onView, onNavigate }) => {
     const handleViewChange = (newView) => {
       onView(newView);
+    };
+
+    const handleTodayClick = () => {
+      onNavigate("TODAY");
+    };
+
+    const handleNextClick = () => {
+      onNavigate("NEXT");
+    };
+
+    const handleBackClick = () => {
+      onNavigate("PREV");
     };
 
     return (
@@ -87,9 +99,6 @@ const MyCalendar = () => {
         }}
       >
         <div>
-          <span className="rbc-toolbar-label">
-            {localizer.format(date, "LLLL yyyy")}
-          </span>
           <span className="rbc-btn-group" style={{ paddingLeft: "5px" }}>
             {/* default buttons */}
             <Button
@@ -112,6 +121,27 @@ const MyCalendar = () => {
             </Button>
           </span>
         </div>
+        <div>
+        <span className="rbc-toolbar-label">
+            {localizer.format(date, "LLLL yyyy")}
+          </span>
+        </div>
+        <div>
+          {/* additional buttons */}
+          <span className="rbc-btn-group">
+            <Button variant="outline-dark" onClick={handleTodayClick}>
+              Today
+            </Button>
+            <Button variant="outline-dark" onClick={handleBackClick}>
+              Back
+            </Button>
+            <Button variant="outline-dark" onClick={handleNextClick}>
+              Next
+            </Button>
+          </span>
+
+        </div>
+        
       </div>
     );
   };
@@ -271,7 +301,7 @@ const MyCalendar = () => {
   const onEventDrop = (data) => {
     const { start, end } = data;
     console.log(data);
-  
+
     const updatedEvents = shifts.map((shift) => {
       // Check if the current shift has the same id as the dragged event
       if (shift.id === data.event.id) {
@@ -286,7 +316,7 @@ const MyCalendar = () => {
         return shift;
       }
     });
-  
+
     console.log("UpdatedEvents:", updatedEvents);
     setShifts(updatedEvents);
   };
@@ -505,10 +535,13 @@ const MyCalendar = () => {
     console.log("Confirming all shifts...");
     const batch = writeBatch(db);
     console.log(shifts);
-  
+
     // Filter and update the shifts in the client-side
     const updatedShifts = shifts.map((shift) => {
-      if (shift.isConfirmed || !moment(shift.start).isSame(selectedDate, "day")) {
+      if (
+        shift.isConfirmed ||
+        !moment(shift.start).isSame(selectedDate, "day")
+      ) {
         // For shifts that are already confirmed or don't match the selected date, return them as they are
         return shift;
       } else {
@@ -519,9 +552,9 @@ const MyCalendar = () => {
         };
       }
     });
-  
+
     console.log("Updated shifts:", updatedShifts);
-  
+
     // Create batch updates for the shifts that need to be confirmed
     updatedShifts.forEach((shift) => {
       if (shift.isConfirmed) {
@@ -532,10 +565,10 @@ const MyCalendar = () => {
         batch.update(shiftRef, updatedShiftData);
       }
     });
-  
+
     // Set the updated shifts array in the state to reflect the changes in the UI
     setShifts(updatedShifts);
-  
+
     // Commit the batch updates to the server
     await batch.commit();
   };
@@ -561,9 +594,9 @@ const MyCalendar = () => {
             startAccessor="start" // Specify the property name for the start date/time
             endAccessor="end" // Specify the property name for the end date/time
             draggableAccessor={(event) => true}
-            onEventDrop={onEventDrop}
+            // onEventDrop={onEventDrop}
             eventPropGetter={shiftStyleGetter}
-            onEventResize={onEventResize}
+            // onEventResize={onEventResize}
             onNavigate={onNavigate}
             onView={onView}
             views={views}
@@ -583,7 +616,11 @@ const MyCalendar = () => {
           />
           <div className="confirm-button-container">
             {showConfirmBtn && (
-              <button variant="primary" className="confirm-button" onClick={() => confirmAllShifts()}>
+              <button
+                variant="primary"
+                className="confirm-button"
+                onClick={() => confirmAllShifts()}
+              >
                 <div className="d-flex align-items-center">
                   <FaCheck />
                   <span style={{ marginLeft: "5px" }}>Confirm All Shifts</span>
