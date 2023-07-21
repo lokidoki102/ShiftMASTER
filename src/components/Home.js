@@ -61,7 +61,7 @@ const Home = () => {
         <>
             <div class="container">
                 <div class="row">
-                    <div class="col-md-8 boxDashboard" style={{ padding: '40px', position: 'relative', paddingBottom: '400px'}}>
+                    <div class="col-md-8 boxDashboard" style={{ padding: '40px', position: 'relative'}}>
                         <h3 class="headerForDash" style={{ color: '#00186C' }}><FontAwesomeIcon icon={faFlag} /> Upcoming Shifts</h3>
                         <div class="d-flex justify-content-center">
                             <ol class="list-group list-group-numbered">
@@ -76,7 +76,7 @@ const Home = () => {
                             </ol>
                         </div>
                     </div>
-                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative', paddingBottom: '400px'}}>
+                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative'}}>
                         <h3 class="headerForDash" style={{ color: '#40006C' }}><FontAwesomeIcon icon={faBell} /> Notifications</h3>
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
