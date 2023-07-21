@@ -40,7 +40,7 @@ const MyCalendar = () => {
   const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
-  const [CompanyCode, setCompanyCode] = useState("");
+  const [uniqueCode, setUniqueCode] = useState("");
   const [shifts, setShifts] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [start, setStart] = useState(new Date()); // the start datetime of the new shift
@@ -56,19 +56,6 @@ const MyCalendar = () => {
     day: true,
   };
   const [showConfirmBtn, setShowConfirmBtn] = useState(false);
-  const [showDropDown, setDropDown] = useState(false);
-
-  const shiftStyleGetter = (shift, start, end, isSelected) => {
-    const backgroundColor = shift.isConfirmed ? "#67C381" : "#EC8787";
-    const borderColor = isSelected ? "white" : backgroundColor;
-  
-    return {
-      style: {
-        backgroundColor,
-        borderColor,
-      },
-    };
-  };
 
   const CustomToolbar = ({ date, view, onView }) => {
     const handleViewChange = (newView) => {
@@ -112,17 +99,12 @@ const MyCalendar = () => {
           </span>
         </div>
 
-        {/* Add other custom buttons or actions here */}
-        {true && (
-          <div>
-            <Button variant="dark" onClick={() => confirmAllShifts()}>
-              Confirm All Shifts
-            </Button>
-          </div>
-
-        )
-        }
-
+        <div>
+          {/* Add other custom buttons or actions here */}
+          <Button variant="dark" onClick={() => confirmAllShifts(shifts)}>
+            Confirm All Shifts
+          </Button>
+        </div>
       </div>
     );
   };
@@ -189,8 +171,8 @@ const MyCalendar = () => {
           setIsApproved(isApproved);
           const role = doc.data().Role.toString();
           setRole(role);
-          const CompanyCode = doc.data().CompanyCode.toString();
-          setCompanyCode(CompanyCode);
+          const uniqueCode = doc.data().UniqueCode.toString();
+          setUniqueCode(uniqueCode);
           let subcollectionRef = null;
           let subcollectionQuery = null;
           // Employee: Show only his/her own shifts
@@ -216,13 +198,11 @@ const MyCalendar = () => {
               where("start", ">=", start),
               where("start", "<", end),
               where("isVisible", "==", true),
-              where("CompanyCode", "==", CompanyCode),
+              where("UniqueCode", "==", uniqueCode),
               orderBy("start")
             );
 
-            setDropDown(true);
-            setShowConfirmBtn(true);
-            queryEmployees(CompanyCode);
+            queryEmployees(uniqueCode);
           } else {
             console.log("Role not found");
             return;
@@ -248,17 +228,16 @@ const MyCalendar = () => {
         })
       );
       setShifts(fetchedShifts);
-      // console.log("The shifts are:",shifts)
     });
     return () => unsubscribe();
   }, []);
 
   // Query for getting employee names
-  const queryEmployees = async (CompanyCode) => {
+  const queryEmployees = async (uniqueCode) => {
     const fetchedEmployees = [];
     const q = query(
       collection(db, "users"),
-      where("CompanyCode", "==", CompanyCode)
+      where("UniqueCode", "==", uniqueCode)
     );
 
     try {
@@ -266,7 +245,6 @@ const MyCalendar = () => {
       querySnapshot.forEach((doc) => {
         const employee = {
           id: doc.data().UserID,
-          docID: doc.id,
           name: doc.data().UserName,
         };
         fetchedEmployees.push(employee);
@@ -323,24 +301,20 @@ const MyCalendar = () => {
       setCurrentView("day");
 
       if (role === "Manager") {
-        console.log("I AM A MANAGER, OPEN THE DOOR", showConfirmBtn)
         // Show confirm all button
         setShowConfirmBtn(true);
-        setDropDown(true);
       }
     }
 
     if (view === "month") {
       //   retrieveShift(16, 16);
-      // setShowConfirmBtn(false);
+      setShowConfirmBtn(false);
       setCurrentView("month");
-      setDropDown(true);
     }
 
     if (view === "week") {
-      // setShowConfirmBtn(false);
+      setShowConfirmBtn(false);
       setCurrentView("week");
-      setDropDown(true);
     }
   };
 
@@ -360,7 +334,7 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
-        CompanyCode: CompanyCode,
+        UniqueCode: uniqueCode,
         title: name,
         start,
         end,
@@ -391,7 +365,7 @@ const MyCalendar = () => {
     setNewShift({
       userDocID,
       id,
-      CompanyCode: CompanyCode,
+      UniqueCode: uniqueCode,
       title: name,
       start,
       end,
@@ -505,28 +479,22 @@ const MyCalendar = () => {
   const confirmAllShifts = async () => {
     console.log("Confirming all shifts...");
     const batch = writeBatch(db);
-    // const batch = db.batch();
-    console.log(shifts)
-    if (shifts.length == 0 ){}
-    // iterate through the shifts get all the shifts in this particular day
+  
+    // Now use fetchedShifts array to confirm the shifts
     shifts.forEach((shift) => {
-      console.log("iterating...", selectedDate)
-      //  skip if shift does not belong to the current day
-      if (
-        shift.isConfirmed ||
-        !moment(shift.start).isSame(selectedDate, "day")
-      ) {
+      if (shift.isConfirmed || !moment(shift.start).isSame(selectedDate, "day")) {
         console.log("Skipping this shift id", shift.id);
         return;
       }
       const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
-      console.log("updating this shift ref id:", shift.id);
       const updatedShiftData = {
         isConfirmed: true,
       };
       batch.update(shiftRef, updatedShiftData);
-      // batch.set(shiftRef, updatedShiftData);
     });
+  
+    await commitBatch(batch);
+  };
 
     await batch.commit();
   };
@@ -535,142 +503,129 @@ const MyCalendar = () => {
   const handleDropdownChange = (event) => {
     setSelectedValue(event.target.value);
     newShift.title = employees.find(
-      (employee) => employee.docID === event.target.value
+      (employee) => employee.id === event.target.value
     ).name;
-    newShift.docID = employees.find(
-      (employee) => employee.docID === event.target.value
-    ).docID;
   };
 
   return (
-    <div class="container">
-      <div class="row">
-        <div class="d-flex justify-content-center">
-          <DnDCalendar
-            localizer={localizer} // Specify the localizer (Moment.js in this example)
-            events={shifts} // Pass the events data
-            startAccessor="start" // Specify the property name for the start date/time
-            endAccessor="end" // Specify the property name for the end date/time
-            draggableAccessor={(event) => true}
-            onEventDrop={onEventDrop}
-            eventPropGetter={shiftStyleGetter}
-            onEventResize={onEventResize}
-            onNavigate={onNavigate}
-            onView={onView}
-            views={views}
-            components={{
-              toolbar: CustomToolbar, // Use custom toolbar
-            }}
-            // onSelecting={onSelecting}
-            onSelectSlot={onSelectSlot}
-            onSelectEvent={onSelectEvent}
-            selectable
-            style={{
-              height: "800px",
-              width: "1000px",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          />
+    <div>
+      <DnDCalendar
+        localizer={localizer} // Specify the localizer (Moment.js in this example)
+        events={shifts} // Pass the events data
+        startAccessor="start" // Specify the property name for the start date/time
+        endAccessor="end" // Specify the property name for the end date/time
+        draggableAccessor={(event) => true}
+        onEventDrop={onEventDrop}
+        onEventResize={onEventResize}
+        onNavigate={onNavigate}
+        onView={onView}
+        views={views}
+        components={{
+          toolbar: CustomToolbar, // Use custom toolbar
+        }}
+        // onSelecting={onSelecting}
+        onSelectSlot={onSelectSlot}
+        onSelectEvent={onSelectEvent}
+        selectable
+        style={{
+          height: "800px",
+          width: "1000px",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      />
 
-          <Modal
-            show={showModal}
-            onHide={handleClose}
-            size="lg"
-            aria-labelledby="contained-modal-title-vcenter"
-            centered
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>Modal heading</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form>
-                <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
-                  <table>
-                    <tbody>
-                      <tr>
-                        <td>Start</td>
-                        <td>
-                          <DateTimePicker onChange={onChangeStart} value={start} />
-                        </td>
-                      </tr>
-                      <tr>
-                        <td>End</td>
-                        <td>
-                          <DateTimePicker onChange={onChangeEnd} value={end} />
-                        </td>
-                      </tr>
-
-                      {
-                        showDropDown && (
-                          <tr>
-                            <td>Name</td>
-                            <td>
-                              <select
-                                onChange={handleDropdownChange}
-                                defaultValue={newShift.UserID}
-                              >
-                                <option value="">Select an employee</option>
-                                {employees.map((employee) => (
-                                  <option key={employee.id} value={employee.docID}>
-                                    {employee.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                        )
-                      }
-                    </tbody>
-                  </table>
-                </Form.Group>
-              </Form>
-            </Modal.Body>
-            <Modal.Footer>
-              {showCreate && (
-                <Button
-                  variant="primary"
-                  onClick={() => createShift(newShift, newShift.docID, "")}
-                >
-                  Add Shift
-                </Button>
-              )}
-            </Modal.Footer>
-            {showDelete && (
-              <Modal.Footer>
-                {showDelete && (
-                  <Button variant="danger" onClick={() => deleteShift(newShift)}>
-                    Delete
-                  </Button>
-                )}
-                <Button variant="primary" onClick={() => saveShift(newShift)}>
-                  Update
-                </Button>
-              </Modal.Footer>
-            )}
-          </Modal>
-          <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
-            <Toast
-              onClose={() => setShowToast(false)}
-              show={showToast}
-              delay={6000}
-              autohide
+      <Modal
+        show={showModal}
+        onHide={handleClose}
+        size="lg"
+        aria-labelledby="contained-modal-title-vcenter"
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Modal heading</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Start</td>
+                    <td>
+                      <DateTimePicker onChange={onChangeStart} value={start} />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>End</td>
+                    <td>
+                      <DateTimePicker onChange={onChangeEnd} value={end} />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Name</td>
+                    <td>
+                      <select
+                        onChange={handleDropdownChange}
+                        defaultValue={newShift.UserID}
+                      >
+                        <option value="">Select an employee</option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          {showCreate && (
+            <Button
+              variant="primary"
+              onClick={() => createShift(newShift, currentUserDocID, "")}
             >
-              <Toast.Header className="bg-danger text-white">
-                <img
-                  src="holder.js/20x20?text=%20"
-                  className="rounded me-2"
-                  alt=""
-                />
-                <strong className="me-auto">Warning</strong>
-              </Toast.Header>
-              <Toast.Body className="bg-danger text-white">
-                Please wait until you're approved by your manager.
-              </Toast.Body>
-            </Toast>
-          </ToastContainer>
-        </div>
-      </div>
+              Add Shift
+            </Button>
+          )}
+        </Modal.Footer>
+        {showDelete && (
+          <Modal.Footer>
+            {showDelete && (
+              <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                Delete
+              </Button>
+            )}
+            <Button variant="primary" onClick={() => saveShift(newShift)}>
+              Update
+            </Button>
+          </Modal.Footer>
+        )}
+      </Modal>
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+        <Toast
+          onClose={() => setShowToast(false)}
+          show={showToast}
+          delay={6000}
+          autohide
+        >
+          <Toast.Header className="bg-danger text-white">
+            <img
+              src="holder.js/20x20?text=%20"
+              className="rounded me-2"
+              alt=""
+            />
+            <strong className="me-auto">Warning</strong>
+          </Toast.Header>
+          <Toast.Body className="bg-danger text-white">
+            Please wait until you're approved by your manager.
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }; // end of MyCalendar
