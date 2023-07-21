@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from "../firebase";
 import React from 'react';
+import moment from "moment";
 import { collection, getDocs, addDoc, where, query, doc, updateDoc, deleteDoc, onSnapshot, orderBy, serverTimestamp } from "firebase/firestore";
 
 const userAuthContext = createContext();
@@ -307,6 +308,44 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
+    async function getUpcomingShifts(userID) {
+        // Get upcoming shift and display in Dashboard
+        let upcomingShifts = [];
+        let subcollectionRef;
+        let subcollectionQuery;
+
+        try {
+            return new Promise((resolve) => {
+                const docRef = query(userCollection, where("UserID", "==", userID));
+                onSnapshot(docRef, async (querySnapshot) => {
+                    querySnapshot.docs.map(async (doc) => {
+                        subcollectionRef = collection(doc.ref, "shifts");
+                        subcollectionQuery = query(
+                            subcollectionRef,
+                            where("UserID", "==", userID),
+                            where("isConfirmed", "==", true),
+                            orderBy("start", "desc")
+                        );
+                    })
+                    const subcollectionShifts = await getDocs(subcollectionQuery);
+                    subcollectionShifts.forEach((subDoc) => {
+                        let shiftData = subDoc.data();
+                        if (moment(shiftData.start.toDate()).isSameOrAfter(moment().startOf("day"))) {
+                            upcomingShifts.push({
+                                start: shiftData.start.toDate(),
+                                end: shiftData.end.toDate(),
+                            });
+                        }
+
+                    });
+                    console.log(upcomingShifts);
+                    resolve(upcomingShifts);
+                })
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
     async function updateNotificationView(userID) {
         // Update Notification View after clicking on "Mark All As Read" Button
         console.log("Entered Mark All As Read Button");
@@ -455,7 +494,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, getUpcomingShifts, loading }}>
             {children}
         </userAuthContext.Provider>
     );

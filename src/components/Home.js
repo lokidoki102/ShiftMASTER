@@ -6,8 +6,9 @@ import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/
 import { auth } from "../firebase";
 
 const Home = () => {
-    const { user, getNotifications, updateNotificationView } = useUserAuth();
+    const { user, getNotifications, updateNotificationView, getUpcomingShifts } = useUserAuth();
     const [allNotifications, setAllNotifications] = useState([]);
+    const [allUpcomingShifts, setAllUpcomingShifts] = useState([]);
     const [loggedIn, setLoggedIn] = useState();
     const [disabled, setDisabled] = useState(true);
     auth.onAuthStateChanged((user) => {
@@ -24,10 +25,14 @@ const Home = () => {
                 if (loggedIn !== undefined) {
                     if (loggedIn === true) {
                         await getNotifications(user.uid).then((result) => {
-                            if(result.length !== 0){
+                            if (result.length !== 0) {
                                 setDisabled(false);
                             }
                             setAllNotifications(result);
+                        });
+
+                        await getUpcomingShifts(user.uid).then((result) => {
+                            setAllUpcomingShifts(result);
                         });
                     }
                 }
@@ -40,7 +45,7 @@ const Home = () => {
     const markAllAsRead = async () => {
         try {
             await updateNotificationView(user.uid).then(async (result) => {
-                if(result === true){
+                if (result === true) {
                     await getNotifications(user.uid).then((result) => {
                         setAllNotifications(result);
                         setDisabled(true);
@@ -56,22 +61,22 @@ const Home = () => {
         <>
             <div class="container">
                 <div class="row">
-                    <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
+                    <div class="col-md-8 boxDashboard" style={{ padding: '40px', position: 'relative'}}>
                         <h3 class="headerForDash" style={{ color: '#00186C' }}><FontAwesomeIcon icon={faFlag} /> Upcoming Shifts</h3>
                         <div class="d-flex justify-content-center">
                             <ol class="list-group list-group-numbered">
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
+                                {allUpcomingShifts && allUpcomingShifts.map((shift) =>
+                                    <li class="list-group-item">
+                                        {"From: " + shift.start.toJSON().slice(0, 10) + " to: " + shift.end.toJSON().slice(0, 10)}
+                                    </li>
+                                )}
+                                {allUpcomingShifts.length === 0 &&
+                                    <li class="list-group-item">There is currently no notification.</li>
+                                }
                             </ol>
                         </div>
                     </div>
-                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative' }}>
+                    <div class="col-md-4 boxDashboard" style={{ padding: '40px', position: 'relative'}}>
                         <h3 class="headerForDash" style={{ color: '#40006C' }}><FontAwesomeIcon icon={faBell} /> Notifications</h3>
                         <div class="d-flex justify-content-center">
                             <ul class="list-group" style={{ width: '100%' }}>
@@ -80,7 +85,7 @@ const Home = () => {
                                         {perNotification.Timestamp.toDate().toJSON().slice(0, 10) + " (" + perNotification.Timestamp.toDate().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true }) + "): " + perNotification.Notification}
                                     </li>
                                 )}
-                                {allNotifications.length === 0 && 
+                                {allNotifications.length === 0 &&
                                     <li class="list-group-item">There is currently no notification.</li>
                                 }
                             </ul>
@@ -89,7 +94,7 @@ const Home = () => {
                             Mark all as read
                         </Button>
                     </div>
-                    <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
+                    {/* <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
                         <h3 class="headerForDash" style={{ color: '#6C0000' }}><FontAwesomeIcon icon={faExclamationTriangle} /> Priority Shifts</h3>
                         <div class="d-flex justify-content-center">
                             <ol class="list-group list-group-numbered">
@@ -109,7 +114,7 @@ const Home = () => {
                         <div class="d-flex justify-content-center">
 
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
         </>
