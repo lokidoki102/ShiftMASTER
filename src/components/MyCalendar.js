@@ -270,14 +270,24 @@ const MyCalendar = () => {
   // --- Event handlers for calendar ---
   const onEventDrop = (data) => {
     const { start, end } = data;
-    const updatedEvents = [
-      {
-        ...shifts[0],
-        start,
-        end,
-      },
-      ...shifts.slice(1),
-    ];
+    console.log(data);
+  
+    const updatedEvents = shifts.map((shift) => {
+      // Check if the current shift has the same id as the dragged event
+      if (shift.id === data.event.id) {
+        // Update the start and end times for the dragged event
+        return {
+          ...shift,
+          start,
+          end,
+        };
+      } else {
+        // For other shifts, just return them as they are (no update needed)
+        return shift;
+      }
+    });
+  
+    console.log("UpdatedEvents:", updatedEvents);
     setShifts(updatedEvents);
   };
 
@@ -444,6 +454,7 @@ const MyCalendar = () => {
             title = doc.data().UserName;
           }
         });
+        console.log("userDocID:", userDocID);
         await createShift(updatedShift, userDocID, title);
       } else {
         // Update the shift in Firestore
@@ -493,30 +504,39 @@ const MyCalendar = () => {
   const confirmAllShifts = async () => {
     console.log("Confirming all shifts...");
     const batch = writeBatch(db);
-    // const batch = db.batch();
     console.log(shifts);
-    if (shifts.length == 0) {
-    }
-    // iterate through the shifts get all the shifts in this particular day
-    shifts.forEach((shift) => {
-      console.log("iterating...", selectedDate);
-      //  skip if shift does not belong to the current day
-      if (
-        shift.isConfirmed ||
-        !moment(shift.start).isSame(selectedDate, "day")
-      ) {
-        console.log("Skipping this shift id", shift.id);
-        return;
+  
+    // Filter and update the shifts in the client-side
+    const updatedShifts = shifts.map((shift) => {
+      if (shift.isConfirmed || !moment(shift.start).isSame(selectedDate, "day")) {
+        // For shifts that are already confirmed or don't match the selected date, return them as they are
+        return shift;
+      } else {
+        // For shifts that need to be confirmed, update the isConfirmed property to true
+        return {
+          ...shift,
+          isConfirmed: true,
+        };
       }
-      const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
-      console.log("updating this shift ref id:", shift.id);
-      const updatedShiftData = {
-        isConfirmed: true,
-      };
-      batch.update(shiftRef, updatedShiftData);
-      // batch.set(shiftRef, updatedShiftData);
     });
-
+  
+    console.log("Updated shifts:", updatedShifts);
+  
+    // Create batch updates for the shifts that need to be confirmed
+    updatedShifts.forEach((shift) => {
+      if (shift.isConfirmed) {
+        const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
+        const updatedShiftData = {
+          isConfirmed: true,
+        };
+        batch.update(shiftRef, updatedShiftData);
+      }
+    });
+  
+    // Set the updated shifts array in the state to reflect the changes in the UI
+    setShifts(updatedShifts);
+  
+    // Commit the batch updates to the server
     await batch.commit();
   };
 
@@ -556,14 +576,14 @@ const MyCalendar = () => {
             selectable
             style={{
               height: "800px",
-              width: "1000px",
+              width: "100%",
               justifyContent: "center",
               alignItems: "center",
             }}
           />
           <div className="confirm-button-container">
             {showConfirmBtn && (
-              <button variant="primary" className="confirm-button">
+              <button variant="primary" className="confirm-button" onClick={() => confirmAllShifts()}>
                 <div className="d-flex align-items-center">
                   <FaCheck />
                   <span style={{ marginLeft: "5px" }}>Confirm All Shifts</span>
