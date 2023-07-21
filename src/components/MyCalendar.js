@@ -1,4 +1,5 @@
 import React, { Component, useCallback, useState, useEffect } from "react";
+import { FaCheck } from "react-icons/fa";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import moment from "moment";
@@ -61,7 +62,7 @@ const MyCalendar = () => {
   const shiftStyleGetter = (shift, start, end, isSelected) => {
     const backgroundColor = shift.isConfirmed ? "#67C381" : "#EC8787";
     const borderColor = isSelected ? "white" : backgroundColor;
-  
+
     return {
       style: {
         backgroundColor,
@@ -70,9 +71,21 @@ const MyCalendar = () => {
     };
   };
 
-  const CustomToolbar = ({ date, view, onView }) => {
+  const CustomToolbar = ({ date, view, onView, onNavigate }) => {
     const handleViewChange = (newView) => {
       onView(newView);
+    };
+
+    const handleTodayClick = () => {
+      onNavigate("TODAY");
+    };
+
+    const handleNextClick = () => {
+      onNavigate("NEXT");
+    };
+
+    const handleBackClick = () => {
+      onNavigate("PREV");
     };
 
     return (
@@ -86,9 +99,6 @@ const MyCalendar = () => {
         }}
       >
         <div>
-          <span className="rbc-toolbar-label">
-            {localizer.format(date, "LLLL yyyy")}
-          </span>
           <span className="rbc-btn-group" style={{ paddingLeft: "5px" }}>
             {/* default buttons */}
             <Button
@@ -111,18 +121,27 @@ const MyCalendar = () => {
             </Button>
           </span>
         </div>
-
-        {/* Add other custom buttons or actions here */}
-        {true && (
-          <div>
-            <Button variant="dark" onClick={() => confirmAllShifts()}>
-              Confirm All Shifts
+        <div>
+        <span className="rbc-toolbar-label">
+            {localizer.format(date, "LLLL yyyy")}
+          </span>
+        </div>
+        <div>
+          {/* additional buttons */}
+          <span className="rbc-btn-group">
+            <Button variant="outline-dark" onClick={handleTodayClick}>
+              Today
             </Button>
-          </div>
+            <Button variant="outline-dark" onClick={handleBackClick}>
+              Back
+            </Button>
+            <Button variant="outline-dark" onClick={handleNextClick}>
+              Next
+            </Button>
+          </span>
 
-        )
-        }
-
+        </div>
+        
       </div>
     );
   };
@@ -221,7 +240,7 @@ const MyCalendar = () => {
             );
 
             setDropDown(true);
-            setShowConfirmBtn(true);
+            // setShowConfirmBtn(true);
             queryEmployees(CompanyCode);
           } else {
             console.log("Role not found");
@@ -281,14 +300,24 @@ const MyCalendar = () => {
   // --- Event handlers for calendar ---
   const onEventDrop = (data) => {
     const { start, end } = data;
-    const updatedEvents = [
-      {
-        ...shifts[0],
-        start,
-        end,
-      },
-      ...shifts.slice(1),
-    ];
+    console.log(data);
+
+    const updatedEvents = shifts.map((shift) => {
+      // Check if the current shift has the same id as the dragged event
+      if (shift.id === data.event.id) {
+        // Update the start and end times for the dragged event
+        return {
+          ...shift,
+          start,
+          end,
+        };
+      } else {
+        // For other shifts, just return them as they are (no update needed)
+        return shift;
+      }
+    });
+
+    console.log("UpdatedEvents:", updatedEvents);
     setShifts(updatedEvents);
   };
 
@@ -323,7 +352,6 @@ const MyCalendar = () => {
       setCurrentView("day");
 
       if (role === "Manager") {
-        console.log("I AM A MANAGER, OPEN THE DOOR", showConfirmBtn)
         // Show confirm all button
         setShowConfirmBtn(true);
         setDropDown(true);
@@ -332,13 +360,13 @@ const MyCalendar = () => {
 
     if (view === "month") {
       //   retrieveShift(16, 16);
-      // setShowConfirmBtn(false);
+      setShowConfirmBtn(false);
       setCurrentView("month");
       setDropDown(true);
     }
 
     if (view === "week") {
-      // setShowConfirmBtn(false);
+      setShowConfirmBtn(false);
       setCurrentView("week");
       setDropDown(true);
     }
@@ -456,6 +484,7 @@ const MyCalendar = () => {
             title = doc.data().UserName;
           }
         });
+        console.log("userDocID:", userDocID);
         await createShift(updatedShift, userDocID, title);
       } else {
         // Update the shift in Firestore
@@ -505,29 +534,42 @@ const MyCalendar = () => {
   const confirmAllShifts = async () => {
     console.log("Confirming all shifts...");
     const batch = writeBatch(db);
-    // const batch = db.batch();
-    console.log(shifts)
-    if (shifts.length == 0 ){}
-    // iterate through the shifts get all the shifts in this particular day
-    shifts.forEach((shift) => {
-      console.log("iterating...", selectedDate)
-      //  skip if shift does not belong to the current day
+    console.log(shifts);
+
+    // Filter and update the shifts in the client-side
+    const updatedShifts = shifts.map((shift) => {
       if (
         shift.isConfirmed ||
         !moment(shift.start).isSame(selectedDate, "day")
       ) {
-        console.log("Skipping this shift id", shift.id);
-        return;
+        // For shifts that are already confirmed or don't match the selected date, return them as they are
+        return shift;
+      } else {
+        // For shifts that need to be confirmed, update the isConfirmed property to true
+        return {
+          ...shift,
+          isConfirmed: true,
+        };
       }
-      const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
-      console.log("updating this shift ref id:", shift.id);
-      const updatedShiftData = {
-        isConfirmed: true,
-      };
-      batch.update(shiftRef, updatedShiftData);
-      // batch.set(shiftRef, updatedShiftData);
     });
 
+    console.log("Updated shifts:", updatedShifts);
+
+    // Create batch updates for the shifts that need to be confirmed
+    updatedShifts.forEach((shift) => {
+      if (shift.isConfirmed) {
+        const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
+        const updatedShiftData = {
+          isConfirmed: true,
+        };
+        batch.update(shiftRef, updatedShiftData);
+      }
+    });
+
+    // Set the updated shifts array in the state to reflect the changes in the UI
+    setShifts(updatedShifts);
+
+    // Commit the batch updates to the server
     await batch.commit();
   };
 
@@ -552,9 +594,9 @@ const MyCalendar = () => {
             startAccessor="start" // Specify the property name for the start date/time
             endAccessor="end" // Specify the property name for the end date/time
             draggableAccessor={(event) => true}
-            onEventDrop={onEventDrop}
+            // onEventDrop={onEventDrop}
             eventPropGetter={shiftStyleGetter}
-            onEventResize={onEventResize}
+            // onEventResize={onEventResize}
             onNavigate={onNavigate}
             onView={onView}
             views={views}
@@ -567,11 +609,25 @@ const MyCalendar = () => {
             selectable
             style={{
               height: "800px",
-              width: "1000px",
+              width: "100%",
               justifyContent: "center",
               alignItems: "center",
             }}
           />
+          <div className="confirm-button-container">
+            {showConfirmBtn && (
+              <button
+                variant="primary"
+                className="confirm-button"
+                onClick={() => confirmAllShifts()}
+              >
+                <div className="d-flex align-items-center">
+                  <FaCheck />
+                  <span style={{ marginLeft: "5px" }}>Confirm All Shifts</span>
+                </div>
+              </button>
+            )}
+          </div>
 
           <Modal
             show={showModal}
@@ -585,13 +641,19 @@ const MyCalendar = () => {
             </Modal.Header>
             <Modal.Body>
               <Form>
-                <Form.Group className="mb-3" controlId="exampleForm.ControlInput1">
+                <Form.Group
+                  className="mb-3"
+                  controlId="exampleForm.ControlInput1"
+                >
                   <table>
                     <tbody>
                       <tr>
                         <td>Start</td>
                         <td>
-                          <DateTimePicker onChange={onChangeStart} value={start} />
+                          <DateTimePicker
+                            onChange={onChangeStart}
+                            value={start}
+                          />
                         </td>
                       </tr>
                       <tr>
@@ -601,26 +663,27 @@ const MyCalendar = () => {
                         </td>
                       </tr>
 
-                      {
-                        showDropDown && (
-                          <tr>
-                            <td>Name</td>
-                            <td>
-                              <select
-                                onChange={handleDropdownChange}
-                                defaultValue={newShift.UserID}
-                              >
-                                <option value="">Select an employee</option>
-                                {employees.map((employee) => (
-                                  <option key={employee.id} value={employee.docID}>
-                                    {employee.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                        )
-                      }
+                      {showDropDown && (
+                        <tr>
+                          <td>Name</td>
+                          <td>
+                            <select
+                              onChange={handleDropdownChange}
+                              defaultValue={newShift.UserID}
+                            >
+                              <option value="">Select an employee</option>
+                              {employees.map((employee) => (
+                                <option
+                                  key={employee.id}
+                                  value={employee.docID}
+                                >
+                                  {employee.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </Form.Group>
@@ -639,7 +702,10 @@ const MyCalendar = () => {
             {showDelete && (
               <Modal.Footer>
                 {showDelete && (
-                  <Button variant="danger" onClick={() => deleteShift(newShift)}>
+                  <Button
+                    variant="danger"
+                    onClick={() => deleteShift(newShift)}
+                  >
                     Delete
                   </Button>
                 )}
@@ -649,7 +715,11 @@ const MyCalendar = () => {
               </Modal.Footer>
             )}
           </Modal>
-          <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1 }}>
+          <ToastContainer
+            position="top-end"
+            className="p-3"
+            style={{ zIndex: 1 }}
+          >
             <Toast
               onClose={() => setShowToast(false)}
               show={showToast}

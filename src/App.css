@@ -246,3 +246,19 @@ body {
     font-family: 'Raleway', sans-serif !important;
     font-weight: 600 !important;
 }
+
+.confirm-button-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999;
+ }
+
+ .confirm-button {
+    border-radius: 30px; /* Adjust the value to change the roundness of the corners */
+    padding: 10px 20px; /* Add some padding to the button for better appearance */
+    background-color: #212529; /* Adjust the background color as needed */
+    color: white; /* Adjust the text color as needed */
+    font-size: 15px; /* Adjust the font size as needed */
+    cursor: pointer;
+  }
