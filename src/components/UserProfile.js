@@ -15,6 +15,9 @@ const UserProfile = () => {
     const [messagePhone, setMessagePhone] = useState('');
     const [showApproved, setShowApproved] = useState(false);
     const [showDelete, setShowDelete] = useState(false);
+    const [showAfterApproved, setShowAfterApproved] = useState(false);
+    const [showAfterDelete, setShowAfterDelete] = useState(false);
+    const [showAfterUpdateProfile, setShowAfterUpdateProfile] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
@@ -76,10 +79,14 @@ const UserProfile = () => {
                 }
             }
             if (buttonResult === true) {
-                await approveEmployees(allEmployees, oneUser);
-                setTimeout(function () {
-                    window.location.reload(true);
-                }, 4000);
+                setShowAfterApproved(true);
+                await approveEmployees(allEmployees, oneUser).then((result) => {
+                    if (result === true) {
+                        setTimeout(function () {
+                            window.location.reload(true);
+                        }, 3000);
+                    }
+                });
             } else {
                 setShowApproved(true);
             }
@@ -99,10 +106,14 @@ const UserProfile = () => {
                 }
             }
             if (buttonResult === true) {
-                await deleteEmployees(allEmployees, oneUser);
-                setTimeout(function () {
-                    window.location.reload(true);
-                }, 4000);
+                setShowAfterDelete(true);
+                await deleteEmployees(allEmployees, oneUser).then((result) => {
+                    if (result === true) {
+                        setTimeout(function () {
+                            window.location.reload(true);
+                        }, 3000);
+                    }
+                });
             } else {
                 setShowDelete(true);
             }
@@ -114,10 +125,14 @@ const UserProfile = () => {
     const handleUserUpdate = async (e) => {
         e.preventDefault();
         try {
-            await updateUserProfile(user.uid, name, phoneNumber);
-            setTimeout(function () {
-                window.location.reload(true);
-            }, 3000);
+            setShowAfterUpdateProfile(true);
+            await updateUserProfile(user.uid, name, phoneNumber).then((result) => {
+                if (result === true) {
+                    setTimeout(function () {
+                        window.location.reload(true);
+                    }, 3000);
+                }
+            });
         } catch (error) {
             console.log(error);
         }
@@ -270,7 +285,7 @@ const UserProfile = () => {
                                 </Button>
                                 <p></p>
                                 <Button variant="secondary" type="Submit" onClick={handleEmployeeDelete}>
-                                    Delete Pending Employee
+                                    Remove Pending Employee
                                 </Button>
                             </div>
                         </div>
@@ -366,7 +381,34 @@ const UserProfile = () => {
                     delay={5000}
                     autohide>
                     <Toast.Body className="bg-warning text-black">
-                        You have not selected any employees for deletion.
+                        You have not selected any employees for removal.
+                    </Toast.Body>
+                </Toast>
+                <Toast
+                    onClose={() => setShowAfterApproved(false)}
+                    show={showAfterApproved}
+                    delay={7000}
+                    autohide>
+                    <Toast.Body className="bg-info text-black">
+                        You have approved employee into your team! Please wait a moment.
+                    </Toast.Body>
+                </Toast>
+                <Toast
+                    onClose={() => setShowAfterDelete(false)}
+                    show={showAfterDelete}
+                    delay={7000}
+                    autohide>
+                    <Toast.Body className="bg-info text-black">
+                        You have removed employee from your team! Please wait a moment.
+                    </Toast.Body>
+                </Toast>
+                <Toast
+                    onClose={() => setShowAfterUpdateProfile(false)}
+                    show={showAfterUpdateProfile}
+                    delay={7000}
+                    autohide>
+                    <Toast.Body className="bg-info text-black">
+                        You have updated your user profile! Please wait a moment.
                     </Toast.Body>
                 </Toast>
             </ToastContainer>

@@ -64,26 +64,29 @@ export function UserAuthContextProvider({ children }) {
     }
     async function updateUserProfile(userId, name, phoneNumber) {
         // Update User Profile
-        let data;
-        const docRef = query(userCollection, where("UserID", "==", userId));
         try {
-            const docSnap = await getDocs(docRef);
-            docSnap.forEach(async (oneDoc) => {
-                const newRef = doc(db, "users", oneDoc.id);
-                await updateDoc(newRef, {
-                    UserName: name,
-                    UserPhoneNumber: phoneNumber
-                }).then(() => {
-                    const notificationRef = collection(newRef, "notifications");
-                    addDoc(notificationRef, {
-                        Timestamp: serverTimestamp(),
-                        Notification: "You have updated your user profile.",
-                        UserID: userId,
-                        isViewed: false
-                    })
-                });
+            let confirmation = false;
+            return new Promise(async (resolve) => {
+                const docRef = query(userCollection, where("UserID", "==", userId));
+                const docSnap = await getDocs(docRef);
+                docSnap.forEach(async (oneDoc) => {
+                    const newRef = doc(db, "users", oneDoc.id);
+                    await updateDoc(newRef, {
+                        UserName: name,
+                        UserPhoneNumber: phoneNumber
+                    }).then(() => {
+                        const notificationRef = collection(newRef, "notifications");
+                        addDoc(notificationRef, {
+                            Timestamp: serverTimestamp(),
+                            Notification: "You have updated your user profile.",
+                            UserID: userId,
+                            isViewed: false
+                        })
+                    });
+                })
+                confirmation = true;
+                return resolve(confirmation);
             })
-            return Promise.resolve(data);
         } catch (error) {
             console.log(error);
         }
@@ -107,32 +110,37 @@ export function UserAuthContextProvider({ children }) {
     async function approveEmployees(allEmployees, oneUser) {
         // Approve Employees that is selected in the checkbox.
         try {
-            let arrayOfName = new Array();
-            for (var i = 0; i < allEmployees.length; i++) {
-                if (allEmployees[i].Status === "Pending Approval") {
-                    const userId = allEmployees[i].UserID;
-                    arrayOfName.push(allEmployees[i].UserName);
-                    const docRefs = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
-                    const docSnap = await getDocs(docRefs);
-                    docSnap.forEach(async (oneDoc) => {
-                        const userRef = doc(db, "users", oneDoc.id);
-                        await updateDoc(userRef, {
-                            Status: "Approved"
-                        }).then(() => {
-                            // Sending notifications to employee that they have been approved.
-                            const notificationRef = collection(userRef, "notifications");
-                            addDoc(notificationRef, {
-                                Timestamp: serverTimestamp(),
-                                Notification: "You have been approved! You can start to suggest your preferred working timing.",
-                                UserID: userId,
-                                isViewed: false
-                            })
-                        });
-                    })
+            let confirmation = false;
+            return new Promise(async (resolve) => {
+                let arrayOfName = new Array();
+                for (var i = 0; i < allEmployees.length; i++) {
+                    if (allEmployees[i].Status === "Pending Approval") {
+                        const userId = allEmployees[i].UserID;
+                        arrayOfName.push(allEmployees[i].UserName);
+                        const docRefs = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
+                        const docSnap = await getDocs(docRefs);
+                        docSnap.forEach(async (oneDoc) => {
+                            const userRef = doc(db, "users", oneDoc.id);
+                            await updateDoc(userRef, {
+                                Status: "Approved"
+                            }).then(() => {
+                                // Sending notifications to employee that they have been approved.
+                                const notificationRef = collection(userRef, "notifications");
+                                addDoc(notificationRef, {
+                                    Timestamp: serverTimestamp(),
+                                    Notification: "You have been approved! You can start to suggest your preferred working timing.",
+                                    UserID: userId,
+                                    isViewed: false
+                                })
+                            });
+                        })
+                    }
                 }
-            }
-            // Sending notification to manager which employees they have approved
-            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Approved");
+                // Sending notification to manager which employees they have approved
+                await sendNotificationToManager(arrayOfName, oneUser.UserID, "Approved");
+                confirmation = true;
+                return resolve(confirmation);
+            })
         } catch (error) {
             console.log(error);
         }
@@ -140,20 +148,25 @@ export function UserAuthContextProvider({ children }) {
     async function deleteEmployees(allEmployees, oneUser) {
         // Delete Employees that is selected in the checkbox
         try {
-            let arrayOfName = new Array();
-            for (var i = 0; i < allEmployees.length; i++) {
-                if (allEmployees[i].Status === "Pending Deletion") {
-                    arrayOfName.push(allEmployees[i].UserName);
-                    const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
-                    const docSnap = await getDocs(docRef);
-                    docSnap.forEach(async (oneDoc) => {
-                        const newRef = doc(db, "users", oneDoc.id);
-                        await deleteDoc(newRef);
-                    })
+            let confirmation = false;
+            return new Promise(async (resolve) => {
+                let arrayOfName = new Array();
+                for (var i = 0; i < allEmployees.length; i++) {
+                    if (allEmployees[i].Status === "Pending Deletion") {
+                        arrayOfName.push(allEmployees[i].UserName);
+                        const docRef = query(userCollection, where("CompanyCode", "==", allEmployees[i].CompanyCode), where("UserID", "==", allEmployees[i].UserID));
+                        const docSnap = await getDocs(docRef);
+                        docSnap.forEach(async (oneDoc) => {
+                            const newRef = doc(db, "users", oneDoc.id);
+                            await deleteDoc(newRef);
+                        })
+                    }
                 }
-            }
-            // Sending notification to manager which employees they have removed
-            await sendNotificationToManager(arrayOfName, oneUser.UserID, "Delete");
+                // Sending notification to manager which employees they have removed
+                await sendNotificationToManager(arrayOfName, oneUser.UserID, "Delete");
+                confirmation = true;
+                return resolve(confirmation);
+            })
         } catch (error) {
             console.log(error);
         }
