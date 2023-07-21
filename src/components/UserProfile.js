@@ -18,6 +18,7 @@ const UserProfile = () => {
     const [showAfterApproved, setShowAfterApproved] = useState(false);
     const [showAfterDelete, setShowAfterDelete] = useState(false);
     const [showAfterUpdateProfile, setShowAfterUpdateProfile] = useState(false);
+    const [disabled, setDisabled] = useState(false);
 
     useEffect(() => {
         const getUser = async () => {
@@ -80,6 +81,7 @@ const UserProfile = () => {
             }
             if (buttonResult === true) {
                 setShowAfterApproved(true);
+                setDisabled(true);
                 await approveEmployees(allEmployees, oneUser).then((result) => {
                     if (result === true) {
                         setTimeout(function () {
@@ -107,6 +109,7 @@ const UserProfile = () => {
             }
             if (buttonResult === true) {
                 setShowAfterDelete(true);
+                setDisabled(true);
                 await deleteEmployees(allEmployees, oneUser).then((result) => {
                     if (result === true) {
                         setTimeout(function () {
@@ -280,11 +283,11 @@ const UserProfile = () => {
                             <div class="col-md-1"></div>
                             <div class="col-md-10 text-end">
                                 <p></p>
-                                <Button variant="secondary" type="Submit" onClick={handleEmployeeSubmit}>
+                                <Button variant="secondary" type="Submit" onClick={handleEmployeeSubmit} disabled={disabled}>
                                     Approve Pending Employee
                                 </Button>
                                 <p></p>
-                                <Button variant="secondary" type="Submit" onClick={handleEmployeeDelete}>
+                                <Button variant="secondary" type="Submit" onClick={handleEmployeeDelete} disabled={disabled}>
                                     Remove Pending Employee
                                 </Button>
                             </div>
