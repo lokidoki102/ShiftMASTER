@@ -536,6 +536,7 @@ const MyCalendar = () => {
         });
         console.log("userDocID:", selectedValue);
         await createShift(updatedShift, selectedValue, title);
+        setIsNewValue(false);
       } else {
         // Update the shift in Firestore
         await updateDoc(shiftsCollectionRef, updatedShift);
