@@ -39,6 +39,9 @@ const MyCalendar = () => {
   const { user } = useUserAuth();
   const [currentUserDocID, setCurrentUserID] = useState(""); // the userID of the one logged in
   const [selectedValue, setSelectedValue] = useState("");
+  const [prvsSelectedValue, setprvsSelectedValue] = useState("");
+  const [isNewValue, setIsNewValue] = useState(false);
+  const [newShiftDocID, setNewShiftDocID] = useState("");
   const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
@@ -262,6 +265,10 @@ const MyCalendar = () => {
 
             console.log("Subdocument ID:", subdoc.id);
             console.log("Subdocument data:", subdoc.data());
+            console.log(
+              "subdoc.ref.parent.parent.id:",
+              subdoc.ref.parent.parent.id
+            );
           });
         })
       );
@@ -416,6 +423,9 @@ const MyCalendar = () => {
     // store selected event's start and end times
     setStart(start);
     setEnd(end);
+    setSelectedValue(userDocID);
+    setprvsSelectedValue(userDocID);
+    console.log("currentUserDocID:", userDocID);
     setNewShift({
       userDocID,
       id,
@@ -446,8 +456,34 @@ const MyCalendar = () => {
         newShift.title = title;
       }
 
+      const batch = writeBatch(db);
       // Add new document to the shifts subcollection and add the item in the calendar (client side)
-      addDoc(shiftsCollectionRef, newShift).then(shifts.push(newShift));
+      const newRef = await addDoc(shiftsCollectionRef, newShift);
+      setNewShiftDocID(newRef);
+
+      if (isNewValue) {
+        const newID = newRef.id;
+        console.log("newID:", newID)
+
+        const oldID = newShift.id;
+        console.log("oldID:", oldID)
+
+        // Add the newShiftDocID to the newShift object
+        newShift.id = newID;
+
+        // Save the newShift object to Firestore
+        batch.set(newRef, newShift);
+
+        // Commit the batch
+        await batch.commit();
+
+        const newArray = shifts.filter((shift) => shift.id !== oldID); // filter out the shift that is getting updated
+        newArray.push(newShift); // add the shift that was updated into the new array
+        setShifts(newArray);
+        console.log("newArray:",newArray)
+      } else {
+        shifts.push(newShift);
+      }
     } catch (error) {
       console.error("Error adding event:", error);
     }
@@ -464,10 +500,23 @@ const MyCalendar = () => {
         updatedShift.id
       );
 
+      console.log("updatedShift.userDocID", updatedShift.userDocID);
+      console.log("selectedValue:", selectedValue);
       // Compare if there's a change in the selected employee for the shift
-      if (updatedShift.UserID !== selectedValue && updatedShift.UserID != "") {
+      //   if (
+      //     updatedShift.userDocID !== selectedValue &&
+      //     updatedShift.UserID != ""
+      //   ) {
+      if (isNewValue) {
+        console.log("Should be same as oldID --> updatedShift.id:",updatedShift.id)
         // delete the previous document using the old userid
-        await deleteShift(updatedShift);
+        // await deleteShift(updatedShift);
+        const userRef = doc(db, "users", prvsSelectedValue);
+        const shiftRef = doc(collection(userRef, "shifts"), updatedShift.id);
+        updatedShift.isVisible = false;
+        await updateDoc(shiftRef, updatedShift);
+        // setprvsSelectedValue(selectedValue);
+
         // make a new document using the new userid
         console.log("DATA INCOMING");
         console.log(updatedShift);
@@ -485,17 +534,23 @@ const MyCalendar = () => {
             title = doc.data().UserName;
           }
         });
-        console.log("userDocID:", userDocID);
-        await createShift(updatedShift, userDocID, title);
+        console.log("userDocID:", selectedValue);
+        await createShift(updatedShift, selectedValue, title);
       } else {
         // Update the shift in Firestore
         await updateDoc(shiftsCollectionRef, updatedShift);
+        const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
+        newArray.push(updatedShift); // add the shift that was updated into the new array
+        setShifts(newArray);
       }
 
-      // Refresh the shifts in the calendar
-      const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
-      newArray.push(updatedShift); // add the shift that was updated into the new array
-      setShifts(newArray);
+      //   // Refresh the shifts in the calendar
+      //   console.log("newShiftDocID:", newShiftDocID);
+      //   if (newShiftDocID !== "") {
+      //     console.log("updating shift.id");
+      //     updatedShift.id = newShiftDocID;
+      //     setNewShiftDocID("");
+      //   }
     } catch (error) {
       console.error("Error updating event:", error);
     }
@@ -608,13 +663,39 @@ const MyCalendar = () => {
 
   // Event listener for dropdown for employee's name
   const handleDropdownChange = (event) => {
-    setSelectedValue(event.target.value);
+    // console.log("event.target.value:", event.target.value);
+    // setSelectedValue(event.target.value);
+    // newShift.title = employees.find(
+    //   (employee) => employee.docID === event.target.value
+    // ).name;
+    // console.log("newShift.title:", newShift.title);
+    // newShift.userDocID = employees.find(
+    //   (employee) => employee.docID === event.target.value
+    // ).docID;
+    // console.log("newShift.userDocID", newShift.userDocID);
+
+    const newValue = event.target.value;
+    console.log("event.target.value:", newValue);
+    setSelectedValue(newValue);
+
+    // Check if there's a change in selected value
+    if (newValue !== prvsSelectedValue) {
+      // Do something here with the new selected value
+      setSelectedValue(newValue);
+      setIsNewValue(true);
+      console.log("Selected value changed:", newValue);
+    } else {
+      setIsNewValue(false);
+    }
+
     newShift.title = employees.find(
-      (employee) => employee.docID === event.target.value
+      (employee) => employee.docID === newValue
     ).name;
-    newShift.docID = employees.find(
-      (employee) => employee.docID === event.target.value
+    console.log("newShift.title:", newShift.title);
+    newShift.userDocID = employees.find(
+      (employee) => employee.docID === newValue
     ).docID;
+    console.log("newShift.userDocID", newShift.userDocID);
   };
 
   return (
@@ -702,7 +783,7 @@ const MyCalendar = () => {
                           <td>
                             <select
                               onChange={handleDropdownChange}
-                              defaultValue={newShift.UserID}
+                              defaultValue={newShift.userDocID}
                             >
                               <option value="">Select an employee</option>
                               {employees.map((employee) => (
