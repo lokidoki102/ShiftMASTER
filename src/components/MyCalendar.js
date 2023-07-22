@@ -18,6 +18,7 @@ import {
   getDocs,
   writeBatch,
   commitBatch,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import { Modal, Button, Form } from "react-bootstrap";
@@ -122,7 +123,7 @@ const MyCalendar = () => {
           </span>
         </div>
         <div>
-        <span className="rbc-toolbar-label">
+          <span className="rbc-toolbar-label">
             {localizer.format(date, "LLLL yyyy")}
           </span>
         </div>
@@ -139,9 +140,7 @@ const MyCalendar = () => {
               Next
             </Button>
           </span>
-
         </div>
-        
       </div>
     );
   };
@@ -388,6 +387,7 @@ const MyCalendar = () => {
       setEnd(end);
       handleShow();
       setNewShift({
+        userDocID: currentUserDocID,
         CompanyCode: CompanyCode,
         title: name,
         start,
@@ -436,6 +436,7 @@ const MyCalendar = () => {
   const createShift = async (newShift, userDocID, title) => {
     try {
       handleClose();
+      console.log("ususerDocIDer:", userDocID)
       // Reference to this user's document
       const userRef = doc(db, "users", userDocID);
       // Reference to this user's shifts subcollection
@@ -530,6 +531,7 @@ const MyCalendar = () => {
     }
   };
 
+  //TODO add notification
   // confirm all the shifts for the particular day
   const confirmAllShifts = async () => {
     console.log("Confirming all shifts...");
@@ -558,11 +560,24 @@ const MyCalendar = () => {
     // Create batch updates for the shifts that need to be confirmed
     updatedShifts.forEach((shift) => {
       if (shift.isConfirmed) {
+        // Update shifts
         const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
         const updatedShiftData = {
           isConfirmed: true,
         };
         batch.update(shiftRef, updatedShiftData);
+
+        //  Send notification
+        const notificationData = {
+          timestamp: serverTimestamp(),
+            Notification: "Your shift from " + shift.start.toJSON().slice(0, 10) + " to: " + shift.end.toJSON().slice(0, 10) + " has been approved.",
+
+        };
+        const notificationRef = collection(
+          doc(db, "users", shift.userDocID),
+          "notifications"
+        );
+        batch.set(notificationRef, notificationData);
       }
     });
 
@@ -693,7 +708,7 @@ const MyCalendar = () => {
               {showCreate && (
                 <Button
                   variant="primary"
-                  onClick={() => createShift(newShift, newShift.docID, "")}
+                  onClick={() => createShift(newShift, newShift.userDocID, "")}
                 >
                   Add Shift
                 </Button>
