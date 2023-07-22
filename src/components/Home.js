@@ -67,7 +67,15 @@ const Home = () => {
                             <ol class="list-group list-group-numbered">
                                 {allUpcomingShifts && allUpcomingShifts.map((shift) =>
                                     <li class="list-group-item">
-                                        {"From: " + shift.start.toJSON().slice(0, 10) + " to: " + shift.end.toJSON().slice(0, 10)}
+                                        {"From " + shift.start.toJSON().slice(0, 10) + " " + shift.start.toLocaleString('en-US', {
+                                            hour: 'numeric',
+                                            minute: 'numeric',
+                                            hour12: true
+                                        }) + " to " + shift.end.toJSON().slice(0, 10) + " " + shift.end.toLocaleString('en-US', {
+                                            hour: 'numeric',
+                                            minute: 'numeric',
+                                            hour12: true
+                                        })}
                                     </li>
                                 )}
                                 {allUpcomingShifts.length === 0 &&

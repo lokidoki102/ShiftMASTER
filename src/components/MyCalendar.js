@@ -436,7 +436,7 @@ const MyCalendar = () => {
   const createShift = async (newShift, userDocID, title) => {
     try {
       handleClose();
-      console.log("ususerDocIDer:", userDocID)
+      console.log("ususerDocIDer:", userDocID);
       // Reference to this user's document
       const userRef = doc(db, "users", userDocID);
       // Reference to this user's shifts subcollection
@@ -568,16 +568,34 @@ const MyCalendar = () => {
         batch.update(shiftRef, updatedShiftData);
 
         //  Send notification
-        const notificationData = {
-          timestamp: serverTimestamp(),
-            Notification: "Your shift from " + shift.start.toJSON().slice(0, 10) + " to: " + shift.end.toJSON().slice(0, 10) + " has been approved.",
-
-        };
-        const notificationRef = collection(
-          doc(db, "users", shift.userDocID),
-          "notifications"
+        console.log(
+          "Notificaiton:",
+          "Your shift from " +
+            shift.start.toJSON().slice(0, 10) +
+            " to: " +
+            shift.end.toJSON().slice(0, 10) +
+            " has been approved."
         );
-        batch.set(notificationRef, notificationData);
+        const notificationData = {
+          Timestamp: serverTimestamp(),
+          Notification:
+            "Your shift from " +
+            shift.start.toJSON().slice(0, 10) +
+            " to: " +
+            shift.end.toJSON().slice(0, 10) +
+            " has been approved.",
+          UserID: shift.UserID,
+          isViewed: false,
+        };
+        console.log("shift.userDocID:", shift.userDocID);
+        const userRef = doc(db, "users", shift.userDocID);
+        const notificationRef = collection(userRef, "notifications");
+        console.log("notificationRef.path", notificationRef.path);
+        // const notificationRef = collection(
+        //   doc(db, "users", shift.userDocID),
+        //   "notifications"
+        // );
+        addDoc(notificationRef, notificationData);
       }
     });
 
