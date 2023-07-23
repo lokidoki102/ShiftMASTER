@@ -27,7 +27,7 @@ Our shift management system aims to simplify the process of creating and managin
 3. React.js (Backend)
 4. Node.js (Backend)
 
-**Video:** <br>
+**Video (Introduction):** <br>
 https://drive.google.com/file/d/1gI6eDnxmyt8zmBLo9Nw5NBNTkgcZXpNx/view?usp=share_link
 
 **Website (Deployment):** <br>
@@ -50,5 +50,5 @@ https://shiftmaster-cabd2.web.app/
 
 *Milestone 3 Details:*
 1. Poster: https://drive.google.com/file/d/13oS1sh4Y_4GnKyySmySRRhsMAOxA1Vaz/view?usp=sharing
-2. Video: 
+2. Video: https://drive.google.com/file/d/1F7sMBHB8MloHGrNBppcSN9FplNOL8T6q/view?usp=drive_link
 3. README: https://docs.google.com/document/d/1DQo2d7jPjQR2LaWJ6WdAjNQhQ0TDjtPi2muQw_IdtY0/edit?usp=sharing
