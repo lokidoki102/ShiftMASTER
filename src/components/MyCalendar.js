@@ -38,7 +38,8 @@ const localizer = momentLocalizer(moment);
 const MyCalendar = () => {
   const { user } = useUserAuth();
   const [currentUserDocID, setCurrentUserID] = useState(""); // the userID of the one logged in
-  const [selectedValue, setSelectedValue] = useState("");
+  const [selectedUserDocID, setSelectedUserDocID] = useState("");
+  const [selectedUserID, setSelectedUserID] = useState("");
   const [prvsSelectedValue, setprvsSelectedValue] = useState("");
   const [isNewValue, setIsNewValue] = useState(false);
   const [newShiftDocID, setNewShiftDocID] = useState("");
@@ -195,6 +196,7 @@ const MyCalendar = () => {
   const queryShifts = useCallback((start, end) => {
     const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
+    console.log("(queryShifts): user.uid:", user.uid);
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const fetchedShifts = [];
 
@@ -215,6 +217,8 @@ const MyCalendar = () => {
           let subcollectionRef = null;
           let subcollectionQuery = null;
           // Employee: Show only his/her own shifts
+          console.log("(queryShifts) role:", role);
+
           if (role == "Employee") {
             subcollectionRef = collection(doc.ref, "shifts");
 
@@ -417,13 +421,15 @@ const MyCalendar = () => {
     UserID,
     userDocID,
   }) => {
+    //TODO this ID is returning undefined
+    // 1. Create new shift as a manager > change the employee straight away
     console.log("(onSelectEvent)ID: " + id);
     console.log("(onSelectEvent)UserID: " + UserID);
     console.log("(onSelectEvent)isConfirmed: " + isConfirmed);
     // store selected event's start and end times
     setStart(start);
     setEnd(end);
-    setSelectedValue(userDocID);
+    setSelectedUserDocID(userDocID);
     setprvsSelectedValue(userDocID);
     console.log("currentUserDocID:", userDocID);
     setNewShift({
@@ -443,10 +449,10 @@ const MyCalendar = () => {
   };
 
   // adding shifts into the firebase
-  const createShift = async (newShift, userDocID, title) => {
+  const createShift = async (newShift, userDocID, title, isUpdating) => {
     try {
       handleClose();
-      console.log("ususerDocIDer:", userDocID);
+      console.log("(createShift)ususerDocIDer:", userDocID);
       // Reference to this user's document
       const userRef = doc(db, "users", userDocID);
       // Reference to this user's shifts subcollection
@@ -458,15 +464,19 @@ const MyCalendar = () => {
 
       const batch = writeBatch(db);
       // Add new document to the shifts subcollection and add the item in the calendar (client side)
-      const newRef = await addDoc(shiftsCollectionRef, newShift);
-      setNewShiftDocID(newRef);
 
-      if (isNewValue) {
+      //   setNewShiftDocID(newRef.id); //TODO I think this newShiftDocID is redundant
+      //   newShift.id = newRef.id;
+
+      console.log("(createShift) isNewValue:", isNewValue, isUpdating);
+      if (isNewValue && isUpdating) {
+        const newRef = await addDoc(shiftsCollectionRef, newShift);
+
         const newID = newRef.id;
-        console.log("newID:", newID)
+        console.log("newID:", newID);
 
         const oldID = newShift.id;
-        console.log("oldID:", oldID)
+        console.log("oldID:", oldID);
 
         // Add the newShiftDocID to the newShift object
         newShift.id = newID;
@@ -477,12 +487,30 @@ const MyCalendar = () => {
         // Commit the batch
         await batch.commit();
 
+        //TODO The old shift is not getting removed for some reason(client side, server side seems to be working)
+        const shiftToBeRemoved = shifts.find((shift) => shift.id === oldID);
+        if (shiftToBeRemoved) {
+          console.log("Shift ID to be removed:", shiftToBeRemoved.id);
+        }
         const newArray = shifts.filter((shift) => shift.id !== oldID); // filter out the shift that is getting updated
         newArray.push(newShift); // add the shift that was updated into the new array
         setShifts(newArray);
-        console.log("newArray:",newArray)
+        console.log("newArray:", newArray);
       } else {
-        shifts.push(newShift);
+        console.log("(createShift) role:", role);
+        if (role == "Manager") {
+          console.log("(createShift) selectedUserID:", selectedUserID);
+          newShift.UserID = selectedUserID;
+        }
+        const newRef = await addDoc(shiftsCollectionRef, newShift);
+
+        newShift.id = newRef.id; // this is just so the client side is able to tell what's the id of this newly created shift
+        console.log("newShift", newShift);
+        // await addDoc(shiftsCollectionRef, newShift);
+        // shifts.push(newShift); //TODO This doesnt seem to work
+
+        const a = [].concat(shifts, newShift);
+        setShifts(a);
       }
     } catch (error) {
       console.error("Error adding event:", error);
@@ -492,8 +520,13 @@ const MyCalendar = () => {
   const saveShift = async (updatedShift) => {
     try {
       handleClose();
+      console.log("1");
       // Reference to this user's document
       const userRef = doc(db, "users", currentUserDocID);
+      console.log("2");
+
+      console.log("updatedShift.id:", updatedShift.id);
+
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = doc(
         collection(userRef, "shifts"),
@@ -501,19 +534,24 @@ const MyCalendar = () => {
       );
 
       console.log("updatedShift.userDocID", updatedShift.userDocID);
-      console.log("selectedValue:", selectedValue);
+      console.log("selectedValue:", selectedUserDocID);
+      console.log("isNewValue:", isNewValue);
       // Compare if there's a change in the selected employee for the shift
       //   if (
       //     updatedShift.userDocID !== selectedValue &&
       //     updatedShift.UserID != ""
       //   ) {
       if (isNewValue) {
-        console.log("Should be same as oldID --> updatedShift.id:",updatedShift.id)
+        console.log(
+          "Should be same as oldID --> updatedShift.id:",
+          updatedShift.id
+        );
         // delete the previous document using the old userid
         // await deleteShift(updatedShift);
         const userRef = doc(db, "users", prvsSelectedValue);
         const shiftRef = doc(collection(userRef, "shifts"), updatedShift.id);
         updatedShift.isVisible = false;
+        console.log("shiftRef.path:", shiftRef.path);
         await updateDoc(shiftRef, updatedShift);
         // setprvsSelectedValue(selectedValue);
 
@@ -521,21 +559,21 @@ const MyCalendar = () => {
         console.log("DATA INCOMING");
         console.log(updatedShift);
         updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
-        updatedShift.UserID = selectedValue;
+        updatedShift.UserID = selectedUserDocID;
 
         let userDocID = "";
         let title = "";
 
         const querySnapshot = await getDocs(collection(db, "users"));
         querySnapshot.forEach((doc) => {
-          if (doc.data().UserID === selectedValue) {
+          if (doc.data().UserID === selectedUserDocID) {
             // Reference to this user document
             userDocID = doc.id;
             title = doc.data().UserName;
           }
         });
-        console.log("userDocID:", selectedValue);
-        await createShift(updatedShift, selectedValue, title);
+        console.log("userDocID:", selectedUserDocID);
+        await createShift(updatedShift, selectedUserDocID, title, true);
         setIsNewValue(false);
       } else {
         // Update the shift in Firestore
@@ -677,18 +715,28 @@ const MyCalendar = () => {
 
     const newValue = event.target.value;
     console.log("event.target.value:", newValue);
-    setSelectedValue(newValue);
+    setSelectedUserDocID(newValue);
 
     // Check if there's a change in selected value
     if (newValue !== prvsSelectedValue) {
       // Do something here with the new selected value
-      setSelectedValue(newValue);
+      setSelectedUserDocID(newValue);
       setIsNewValue(true);
       console.log("Selected value changed:", newValue);
     } else {
       setIsNewValue(false);
     }
 
+    // Get the selected option's index
+    const selectedIndex = event.target.selectedIndex;
+
+    // Access the employee object from the employees array
+    const selectedEmployee = employees[selectedIndex - 1]; // Minus 1 to account for the "Select an employee" option
+
+    // Access the key value (employee.id)
+    const key = selectedEmployee.id;
+    setSelectedUserID(key);
+    console.log("(handleDropdownChange) SelectedUserID:", key);
     newShift.title = employees.find(
       (employee) => employee.docID === newValue
     ).name;
@@ -808,7 +856,7 @@ const MyCalendar = () => {
               {showCreate && (
                 <Button
                   variant="primary"
-                  onClick={() => createShift(newShift, newShift.userDocID, "")}
+                  onClick={() => createShift(newShift, newShift.userDocID, "", false)}
                 >
                   Add Shift
                 </Button>
