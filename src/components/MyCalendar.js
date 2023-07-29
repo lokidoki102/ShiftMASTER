@@ -559,7 +559,8 @@ const MyCalendar = () => {
         console.log("DATA INCOMING");
         console.log(updatedShift);
         updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
-        updatedShift.UserID = selectedUserDocID;
+        updatedShift.UserID = selectedUserID;
+        console.log("(saveShift) updatedShift.UserID:", selectedUserID);
 
         let userDocID = "";
         let title = "";
