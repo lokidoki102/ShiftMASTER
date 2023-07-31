@@ -18,10 +18,10 @@ function App() {
             <Container fluid>
                 <Row>
                     <UserAuthContextProvider>
-                        <Col xs={1}>
+                        <Col xs={2}>
                             <Sidebar />
                         </Col>
-                        <Col xs={11} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <Col xs={10} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                             <Routes>
                                 <Route
                                     path="/home"
