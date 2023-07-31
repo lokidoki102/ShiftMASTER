@@ -478,6 +478,27 @@ export function UserAuthContextProvider({ children }) {
             console.log(error);
         }
     }
+    async function checkForNavBar(userId) {
+        // Check if User Exist and display on Navbar
+        // Exist will always be false if the User ID does not exist in the userCollection
+        let exist = false;
+        try {
+            return new Promise(async (resolve) => {
+                let users;
+                users = await getCodeCollection(userCollection);
+                for (var i = 0; i < users.length; i++) {
+                    if (users[i].UserID === userId) {
+                        // It will return Exist to be true if the User ID exist in the userCollection
+                        exist = true;
+                        break;
+                    }
+                }
+                resolve(exist);
+            })
+        } catch (error) {
+            console.log(error);
+        }
+    }
     function logOut() {
         // Remove User Current Session (When Press Log Out or Back Button)
         signOut(auth).then((result) => {
@@ -496,7 +517,7 @@ export function UserAuthContextProvider({ children }) {
         };
     }, []);
     return (
-        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, getUpcomingShifts, loading }}>
+        <userAuthContext.Provider value={{ user, logIn, signUp, logOut, googleSignIn, signUpWitCredentials, validation, getUserProfile, getAllEmployees, approveEmployees, deleteEmployees, updateUserProfile, getNotifications, updateNotificationView, getUpcomingShifts, checkForNavBar, loading }}>
             {children}
         </userAuthContext.Provider>
     );
