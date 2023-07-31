@@ -12,6 +12,7 @@ const Signup = () => {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [uniqueCode, setUniqueCode] = useState("");
+    const [toggleState, setToggleState] = useState(1);
 
     const { signUp, user, signUpWitCredentials, validation } = useUserAuth();
     let navigate = useNavigate();
@@ -29,6 +30,9 @@ const Signup = () => {
                     await signUp(email, password, name, phoneNumber, companyName, uniqueCode).then((result) => {
                         if (result === true) {
                             navigate("/home");
+                        } else {
+                            setError(result);
+                            e.target.reset();
                         }
                     });
                 } else {
@@ -37,6 +41,9 @@ const Signup = () => {
                     await signUpWitCredentials(name, phoneNumber, companyName, uniqueCode).then((result) => {
                         if (result === true) {
                             navigate("/home");
+                        } else {
+                            setError(result);
+                            e.target.reset();
                         }
                     });
                 }
@@ -47,15 +54,14 @@ const Signup = () => {
             }
         } catch (err) {
             console.log(err);
-            setError("There is an error creating your account. Please try again!"); setUniqueCode(""); setCompanyName("");
+            setUniqueCode(""); setCompanyName("");
             e.target.reset();
         }
     };
 
-    const [toggleState, setToggleState] = useState(1);
-
     const toggleTab = (index) => {
         setToggleState(index);
+        setName(""); setCompanyName(""); setEmail(""); setError(""); setPassword(""); setPhoneNumber(""); setUniqueCode("");
     };
 
     return (
@@ -95,6 +101,7 @@ const Signup = () => {
                                                         type="text"
                                                         placeholder="Name"
                                                         onChange={(e) => setName(e.target.value)}
+                                                        value={name}
                                                         required />
                                                 </Form.Group>
 
@@ -104,6 +111,7 @@ const Signup = () => {
                                                         type="text"
                                                         placeholder="Unique Code (e.g. Company-1234)"
                                                         onChange={(e) => setUniqueCode(e.target.value)}
+                                                        value={uniqueCode}
                                                         required />
                                                 </Form.Group>
 
@@ -118,6 +126,7 @@ const Signup = () => {
                                                         type="email"
                                                         placeholder="Email Address"
                                                         onChange={(e) => setEmail(e.target.value)}
+                                                        value={email}
                                                         required />}
                                                 </Form.Group>
 
@@ -132,6 +141,7 @@ const Signup = () => {
                                                         type="password"
                                                         placeholder="Password"
                                                         onChange={(e) => setPassword(e.target.value)}
+                                                        value={password}
                                                         required />}
                                                 </Form.Group>
 
@@ -142,6 +152,7 @@ const Signup = () => {
                                                         placeholder="Phone Number (e.g. 1234-5678)"
                                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                                         pattern="[0-9]{4}-[0-9]{4}"
+                                                        value={phoneNumber}
                                                         required />
                                                 </Form.Group>
 
@@ -171,6 +182,7 @@ const Signup = () => {
                                                         type="text"
                                                         placeholder="Name"
                                                         onChange={(e) => setName(e.target.value)}
+                                                        value={name}
                                                         required />
                                                 </Form.Group>
 
@@ -180,6 +192,7 @@ const Signup = () => {
                                                         type="text"
                                                         placeholder="Company Name"
                                                         onChange={(e) => setCompanyName(e.target.value)}
+                                                        value={companyName}
                                                         required />
                                                 </Form.Group>
 
@@ -194,6 +207,7 @@ const Signup = () => {
                                                         type="email"
                                                         placeholder="Email Address"
                                                         onChange={(e) => setEmail(e.target.value)}
+                                                        value={email}
                                                         required />}
                                                 </Form.Group>
 
@@ -208,6 +222,7 @@ const Signup = () => {
                                                         type="password"
                                                         placeholder="Password"
                                                         onChange={(e) => setPassword(e.target.value)}
+                                                        value={password}
                                                         required />}
                                                 </Form.Group>
 
@@ -218,6 +233,7 @@ const Signup = () => {
                                                         placeholder="Phone Number (e.g. 1234-5678)"
                                                         onChange={(e) => setPhoneNumber(e.target.value)}
                                                         pattern="[0-9]{4}-[0-9]{4}"
+                                                        value={phoneNumber}
                                                         required />
                                                 </Form.Group>
 

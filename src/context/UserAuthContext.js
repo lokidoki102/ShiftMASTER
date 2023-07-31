@@ -384,7 +384,6 @@ export function UserAuthContextProvider({ children }) {
     async function signUp(email, password, name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using normal email (seperate manager and employee role)
         console.log("Entered Sign Up (Normal Email)");
-        let confirmation = false;
         try {
             return new Promise((resolve) => {
                 createUserWithEmailAndPassword(auth, email, password).then(async (result) => {
@@ -400,9 +399,11 @@ export function UserAuthContextProvider({ children }) {
                             await addDoc(notificationRef, assignNotification(userID, uniqueCode, companyCode));
                         });
                     })
-                    confirmation = true;
-                    resolve(confirmation);
-                });
+                    resolve(true);
+                }).catch((error) => {
+                    console.log(error);
+                    resolve(error.message);
+                })
             })
         } catch (error) {
             console.log(error);
@@ -411,7 +412,6 @@ export function UserAuthContextProvider({ children }) {
     async function signUpWitCredentials(name, phoneNumber, companyName, uniqueCode) {
         // Sign Up using Google email (seperate manager and employee role)
         console.log("Entered Sign Up (Google Email)");
-        let result = false;
         try {
             return new Promise((resolve) => {
                 onAuthStateChanged(auth, async (user) => {
@@ -425,9 +425,11 @@ export function UserAuthContextProvider({ children }) {
                                 // 
                                 await addDoc(notificationRef, assignNotification(user.uid, uniqueCode, companyCode));
                             });
+                            resolve(true);
+                        }).catch((error) => {
+                            console.log(error);
+                            resolve(error.message);
                         })
-                        result = true;
-                        resolve(result);
                     }
                 });
             })
