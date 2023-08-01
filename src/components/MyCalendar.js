@@ -162,6 +162,7 @@ const MyCalendar = () => {
 
   // Toast
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   // time picker
   const onChangeStart = (date) => {
@@ -389,6 +390,7 @@ const MyCalendar = () => {
       // show a warning message
       console.log(isApproved);
       console.log("Not approved... showing warning now");
+      setToastMessage("Please wait until you're approved by your manager.");
       setShowToast(true);
       return;
     }
@@ -519,6 +521,12 @@ const MyCalendar = () => {
 
   const saveShift = async (updatedShift) => {
     try {
+      if (updatedShift.isConfirmed) {
+        handleClose();
+        setToastMessage("Unable to edit confirmed shifts");
+        setShowToast(true);
+        return;
+      }
       handleClose();
       console.log("1");
       // Reference to this user's document
@@ -797,6 +805,30 @@ const MyCalendar = () => {
               alignItems: "center",
             }}
           />
+          <ToastContainer
+            position="top-end"
+            className="p-3"
+            style={{ zIndex: 1 }}
+          >
+            <Toast
+              onClose={() => setShowToast(false)}
+              show={showToast}
+              delay={6000}
+              autohide
+            >
+              <Toast.Header className="bg-danger text-white">
+                <img
+                  src="holder.js/20x20?text=%20"
+                  className="rounded me-2"
+                  alt=""
+                />
+                <strong className="me-auto">Warning</strong>
+              </Toast.Header>
+              <Toast.Body className="bg-danger text-white">
+                {toastMessage}
+              </Toast.Body>
+            </Toast>
+          </ToastContainer>
           <div className="confirm-button-container">
             {showConfirmBtn && (
               <button
@@ -909,30 +941,7 @@ const MyCalendar = () => {
               </Modal.Footer>
             )}
           </Modal>
-          <ToastContainer
-            position="top-end"
-            className="p-3"
-            style={{ zIndex: 1 }}
-          >
-            <Toast
-              onClose={() => setShowToast(false)}
-              show={showToast}
-              delay={6000}
-              autohide
-            >
-              <Toast.Header className="bg-danger text-white">
-                <img
-                  src="holder.js/20x20?text=%20"
-                  className="rounded me-2"
-                  alt=""
-                />
-                <strong className="me-auto">Warning</strong>
-              </Toast.Header>
-              <Toast.Body className="bg-danger text-white">
-                Please wait until you're approved by your manager.
-              </Toast.Body>
-            </Toast>
-          </ToastContainer>
+          
         </div>
       </div>
     </div>
