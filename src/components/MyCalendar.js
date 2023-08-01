@@ -626,7 +626,26 @@ const MyCalendar = () => {
     }
   };
 
-  //TODO add notification
+  // confirm a shift
+  const confirmShift = async (shift) => {
+    handleClose();
+
+    shift.isConfirmed = true;
+
+    const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
+
+    await updateDoc(shiftRef, shift);
+
+    // Refresh the shifts in the calendar
+    console.log("Removing from array:", shift.id);
+    const newArray = shifts.filter((s) => s.id !== shift.id); // filter out the shift that is getting updated
+    newArray.push(shift);
+    setShifts(newArray);
+    newArray.forEach((s) => {
+      console.log(s.id);
+    });
+  };
+
   // confirm all the shifts for the particular day
   const confirmAllShifts = async () => {
     console.log("Confirming all shifts...");
@@ -801,7 +820,7 @@ const MyCalendar = () => {
             centered
           >
             <Modal.Header closeButton>
-              <Modal.Title>Modal heading</Modal.Title>
+              <Modal.Title></Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <Form>
@@ -857,7 +876,9 @@ const MyCalendar = () => {
               {showCreate && (
                 <Button
                   variant="primary"
-                  onClick={() => createShift(newShift, newShift.userDocID, "", false)}
+                  onClick={() =>
+                    createShift(newShift, newShift.userDocID, "", false)
+                  }
                 >
                   Add Shift
                 </Button>
@@ -871,6 +892,15 @@ const MyCalendar = () => {
                     onClick={() => deleteShift(newShift)}
                   >
                     Delete
+                  </Button>
+                )}
+
+                {showDelete && (
+                  <Button
+                    variant="success"
+                    onClick={() => confirmShift(newShift)}
+                  >
+                    Confirm
                   </Button>
                 )}
                 <Button variant="primary" onClick={() => saveShift(newShift)}>
