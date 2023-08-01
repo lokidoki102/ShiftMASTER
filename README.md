@@ -22,10 +22,9 @@ Our shift management system aims to simplify the process of creating and managin
    - Manage Employees' Accounts (Manager)
 
 **Tech Stack:**
-1. Firebase (Database & Deploying)
-2. HTML, CSS (Frontend)
+1. Firebase & Firestore (Database & Deployment)
+2. HTML, CSS, Bootstrap (Frontend)
 3. React.js (Backend)
-4. Node.js (Backend)
 
 **Video (Introduction):** <br>
 https://drive.google.com/file/d/1gI6eDnxmyt8zmBLo9Nw5NBNTkgcZXpNx/view?usp=share_link
@@ -36,7 +35,7 @@ https://shiftmaster-cabd2.web.app/
 ## README
 *Project Log:*
 1. Google Sheet: https://docs.google.com/spreadsheets/d/1N7vW2JOtdgIZC79pUzuM6hPVVYtjbxIi0PtU9gHvR8M/edit?usp=drive_link
-2. Trello (SCRUM): https://trello.com/b/40hWlSL7/shiftmaster-orbital
+2. Trello (SWE Practices): https://trello.com/b/40hWlSL7/shiftmaster-orbital
 
 *Milestone 1 Details:*
 1. Poster: https://drive.google.com/file/d/1nURMlJXmLrvwRrFUjR83fBjbur48NAvy/view?usp=share_link
@@ -52,3 +51,8 @@ https://shiftmaster-cabd2.web.app/
 1. Poster: https://drive.google.com/file/d/13oS1sh4Y_4GnKyySmySRRhsMAOxA1Vaz/view?usp=sharing
 2. Video: https://drive.google.com/file/d/1F7sMBHB8MloHGrNBppcSN9FplNOL8T6q/view?usp=drive_link
 3. README: https://docs.google.com/document/d/1DQo2d7jPjQR2LaWJ6WdAjNQhQ0TDjtPi2muQw_IdtY0/edit?usp=sharing
+
+*Final Milestone:*
+1. Poster: https://drive.google.com/file/d/1C3WGpOEJ0i3ARbvBIwuG7hLWCBcXi8KT/view?usp=sharing
+2. Video:
+3. Code (zip format):
