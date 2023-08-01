@@ -422,6 +422,7 @@ const MyCalendar = () => {
     isConfirmed,
     UserID,
     userDocID,
+    title,
   }) => {
     //TODO this ID is returning undefined
     // 1. Create new shift as a manager > change the employee straight away
@@ -438,7 +439,7 @@ const MyCalendar = () => {
       userDocID,
       id,
       CompanyCode: CompanyCode,
-      title: name,
+      title,
       start,
       end,
       UserID,
