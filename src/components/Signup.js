@@ -49,7 +49,7 @@ const Signup = () => {
                 }
             } else {
                 setError("The unique code does not exist in the database. Please try again!");
-                e.target.reset();
+                setName(""); setCompanyName(""); setEmail(""); setPassword(""); setPhoneNumber(""); setUniqueCode("");
                 navigate("/signup");
             }
         } catch (err) {

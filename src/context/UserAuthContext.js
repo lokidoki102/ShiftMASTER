@@ -481,6 +481,7 @@ export function UserAuthContextProvider({ children }) {
     async function checkForNavBar(userId) {
         // Check if User Exist and display on Navbar
         // Exist will always be false if the User ID does not exist in the userCollection
+        console.log("Check if user exists in Navbar")
         let exist = false;
         try {
             return new Promise(async (resolve) => {
@@ -493,6 +494,7 @@ export function UserAuthContextProvider({ children }) {
                         break;
                     }
                 }
+                console.log(exist);
                 resolve(exist);
             })
         } catch (error) {
