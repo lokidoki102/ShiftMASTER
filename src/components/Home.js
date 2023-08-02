@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
 import { useUserAuth } from "../context/UserAuthContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBell, faDatabase, faExclamationTriangle, faFlag } from '@fortawesome/free-solid-svg-icons'
+import { faBell, faFlag } from '@fortawesome/free-solid-svg-icons'
 import { auth } from "../firebase";
 
 const Home = () => {
@@ -21,6 +21,7 @@ const Home = () => {
 
     useEffect(() => {
         try {
+           
             (async () => {
                 if (loggedIn !== undefined) {
                     if (loggedIn === true) {
@@ -102,27 +103,6 @@ const Home = () => {
                             Mark all as read
                         </Button>
                     </div>
-                    {/* <div class="col-md-8 boxDashboard" style={{ padding: '40px' }}>
-                        <h3 class="headerForDash" style={{ color: '#6C0000' }}><FontAwesomeIcon icon={faExclamationTriangle} /> Priority Shifts</h3>
-                        <div class="d-flex justify-content-center">
-                            <ol class="list-group list-group-numbered">
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                                <li class="list-group-item">A list item</li>
-                            </ol>
-                        </div>
-                    </div>
-                    <div class="col-md-4 boxDashboard" style={{ padding: '40px' }}>
-                        <h3 class="headerForDash" style={{ color: '#006C48' }}><FontAwesomeIcon icon={faDatabase} /> Summary</h3>
-                        <div class="d-flex justify-content-center">
-
-                        </div>
-                    </div> */}
                 </div>
             </div>
         </>
