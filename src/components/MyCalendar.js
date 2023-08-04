@@ -21,7 +21,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, Spinner } from "react-bootstrap";
 import "rc-time-picker/assets/index.css";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
@@ -31,6 +31,7 @@ import "../App.css";
 import { useUserAuth } from "../context/UserAuthContext";
 import Toast from "react-bootstrap/Toast";
 import ToastContainer from "react-bootstrap/ToastContainer";
+import { motion } from "framer-motion/dist/framer-motion";
 
 const DnDCalendar = withDragAndDrop(Calendar);
 const localizer = momentLocalizer(moment);
@@ -149,6 +150,50 @@ const MyCalendar = () => {
     );
   };
 
+  // Loading animation
+  const [loading, setLoading] = useState(true);
+
+  const loadingContainer = {
+    width: "4rem",
+    height: "4rem",
+    display: "flex",
+    justifyContent: "space-around",
+  };
+  const loadingCircle = {
+    display: "block",
+    width: "1rem",
+    height: "1rem",
+    backgroundColor: "#2F2E2E",
+    borderRadius: "0.5rem",
+  };
+
+  const loadingContainerVariants = {
+    start: {
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+    end: {
+      transition: {
+        staggerChildren: 0.2,
+      },
+    },
+  };
+
+  const loadingCircleVariants = {
+    start: {
+      y: "0%",
+    },
+    end: {
+      y: "60%",
+    },
+  };
+  const loadingCircleTransition = {
+    duration: 0.4,
+    yoyo: Infinity,
+    ease: "easeInOut",
+  };
+
   // Modal
   const [showModal, setShowModal] = useState(false);
   const [showDelete, setShowDelete] = useState(false); // for delete button
@@ -198,11 +243,10 @@ const MyCalendar = () => {
     const q = query(collection(db, "users"), where("UserID", "==", user.uid));
 
     console.log("(queryShifts): user.uid:", user.uid);
+    setLoading(true);
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const fetchedShifts = [];
-
       // Manager: show all shifts available in the company
-
       await Promise.all(
         querySnapshot.docs.map(async (doc) => {
           setCurrentUserID(doc.id.toString());
@@ -267,17 +311,11 @@ const MyCalendar = () => {
               end: shiftData.end.toDate(),
               isConfirmed: shiftData.isConfirmed,
             });
-
-            console.log("Subdocument ID:", subdoc.id);
-            console.log("Subdocument data:", subdoc.data());
-            console.log(
-              "subdoc.ref.parent.parent.id:",
-              subdoc.ref.parent.parent.id
-            );
           });
         })
       );
       setShifts(fetchedShifts);
+      setLoading(false);
       // console.log("The shifts are:",shifts)
     });
     return () => unsubscribe();
@@ -455,6 +493,7 @@ const MyCalendar = () => {
   const createShift = async (newShift, userDocID, title, isUpdating) => {
     try {
       handleClose();
+      setLoading(true);
       console.log("(createShift)ususerDocIDer:", userDocID);
       // Reference to this user's document
       const userRef = doc(db, "users", userDocID);
@@ -515,7 +554,9 @@ const MyCalendar = () => {
         const a = [].concat(shifts, newShift);
         setShifts(a);
       }
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error("Error adding event:", error);
     }
   };
@@ -528,6 +569,7 @@ const MyCalendar = () => {
         setShowToast(true);
         return;
       }
+      setLoading(true);
       handleClose();
       console.log("1");
       // Reference to this user's document
@@ -583,30 +625,29 @@ const MyCalendar = () => {
           }
         });
         console.log("userDocID:", selectedUserDocID);
+        setLoading(true);
         await createShift(updatedShift, selectedUserDocID, title, true);
+        setLoading(false);
         setIsNewValue(false);
       } else {
         // Update the shift in Firestore
+        setLoading(true);
         await updateDoc(shiftsCollectionRef, updatedShift);
+        setLoading(false);
         const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
         newArray.push(updatedShift); // add the shift that was updated into the new array
         setShifts(newArray);
       }
-
-      //   // Refresh the shifts in the calendar
-      //   console.log("newShiftDocID:", newShiftDocID);
-      //   if (newShiftDocID !== "") {
-      //     console.log("updating shift.id");
-      //     updatedShift.id = newShiftDocID;
-      //     setNewShiftDocID("");
-      //   }
+      setLoading(false);
     } catch (error) {
       console.error("Error updating event:", error);
+      setLoading(false);
     }
   };
 
   const deleteShift = async (updatedShift) => {
     try {
+      setLoading(true);
       handleClose();
       updatedShift.isVisible = false; // Set isVisible to false
 
@@ -630,7 +671,10 @@ const MyCalendar = () => {
       newArray.forEach((shift) => {
         console.log(shift.id);
       });
+
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error("Error deleting event:", error);
     }
   };
@@ -638,7 +682,7 @@ const MyCalendar = () => {
   // confirm a shift
   const confirmShift = async (shift) => {
     handleClose();
-
+    setLoading(true);
     shift.isConfirmed = true;
 
     const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
@@ -653,6 +697,7 @@ const MyCalendar = () => {
     newArray.forEach((s) => {
       console.log(s.id);
     });
+    setLoading(false);
   };
 
   // confirm all the shifts for the particular day
@@ -714,10 +759,7 @@ const MyCalendar = () => {
         const userRef = doc(db, "users", shift.userDocID);
         const notificationRef = collection(userRef, "notifications");
         console.log("notificationRef.path", notificationRef.path);
-        // const notificationRef = collection(
-        //   doc(db, "users", shift.userDocID),
-        //   "notifications"
-        // );
+
         addDoc(notificationRef, notificationData);
       }
     });
@@ -731,17 +773,6 @@ const MyCalendar = () => {
 
   // Event listener for dropdown for employee's name
   const handleDropdownChange = (event) => {
-    // console.log("event.target.value:", event.target.value);
-    // setSelectedValue(event.target.value);
-    // newShift.title = employees.find(
-    //   (employee) => employee.docID === event.target.value
-    // ).name;
-    // console.log("newShift.title:", newShift.title);
-    // newShift.userDocID = employees.find(
-    //   (employee) => employee.docID === event.target.value
-    // ).docID;
-    // console.log("newShift.userDocID", newShift.userDocID);
-
     const newValue = event.target.value;
     console.log("event.target.value:", newValue);
     setSelectedUserDocID(newValue);
@@ -778,6 +809,39 @@ const MyCalendar = () => {
 
   return (
     <div class="container">
+      {loading && (
+        <div
+          className="d-flex justify-content-center align-items-center"
+          style={{ height: "100vh" }}
+        >
+          <div className="fixed  w-full min-h-screen z-50 opacity-5">
+            <div className="flex fixed w-full justify-center items-center h-screen">
+              <motion.div
+                style={loadingContainer}
+                variants={loadingContainerVariants}
+                initial="start"
+                animate="end"
+              >
+                <motion.span
+                  style={loadingCircle}
+                  variants={loadingCircleVariants}
+                  transition={loadingCircleTransition}
+                ></motion.span>
+                <motion.span
+                  style={loadingCircle}
+                  variants={loadingCircleVariants}
+                  transition={loadingCircleTransition}
+                ></motion.span>
+                <motion.span
+                  style={loadingCircle}
+                  variants={loadingCircleVariants}
+                  transition={loadingCircleTransition}
+                ></motion.span>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      )}
       <div class="row">
         <div class="d-flex justify-content-center">
           <DnDCalendar
@@ -942,7 +1006,6 @@ const MyCalendar = () => {
               </Modal.Footer>
             )}
           </Modal>
-          
         </div>
       </div>
     </div>
