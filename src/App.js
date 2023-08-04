@@ -13,6 +13,7 @@ import { UserAuthContextProvider } from "./context/UserAuthContext";
 import { BrowserView, MobileView } from 'react-device-detect';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+
 function App() {
     return (
         <>
