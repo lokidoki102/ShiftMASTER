@@ -1,4 +1,4 @@
-import React, { Component, useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { FaCheck } from "react-icons/fa";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -17,11 +17,10 @@ import {
   collectionGroup,
   getDocs,
   writeBatch,
-  commitBatch,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { Modal, Button, Form, Spinner } from "react-bootstrap";
+import { Modal, Button, Form } from "react-bootstrap";
 import "rc-time-picker/assets/index.css";
 import DateTimePicker from "react-datetime-picker";
 import "react-datetime-picker/dist/DateTimePicker.css";
@@ -43,7 +42,7 @@ const MyCalendar = () => {
   const [selectedUserID, setSelectedUserID] = useState("");
   const [prvsSelectedValue, setprvsSelectedValue] = useState("");
   const [isNewValue, setIsNewValue] = useState(false);
-  const [newShiftDocID, setNewShiftDocID] = useState("");
+  //   const [newShiftDocID, setNewShiftDocID] = useState("");
   const [name, setName] = useState("");
   const [isApproved, setIsApproved] = useState("");
   const [role, setRole] = useState("");
@@ -264,7 +263,7 @@ const MyCalendar = () => {
           // Employee: Show only his/her own shifts
           console.log("(queryShifts) role:", role);
 
-          if (role == "Employee") {
+          if (role === "Employee") {
             subcollectionRef = collection(doc.ref, "shifts");
 
             subcollectionQuery = query(
@@ -277,7 +276,7 @@ const MyCalendar = () => {
             );
           }
           // Manager: Show all the shifts under the company
-          else if (role == "Manager") {
+          else if (role === "Manager") {
             // show all shifts
             subcollectionRef = collectionGroup(db, "shifts");
 
@@ -347,41 +346,41 @@ const MyCalendar = () => {
   };
 
   // --- Event handlers for calendar ---
-  const onEventDrop = (data) => {
-    const { start, end } = data;
-    console.log(data);
+  //   const onEventDrop = (data) => {
+  //     const { start, end } = data;
+  //     console.log(data);
 
-    const updatedEvents = shifts.map((shift) => {
-      // Check if the current shift has the same id as the dragged event
-      if (shift.id === data.event.id) {
-        // Update the start and end times for the dragged event
-        return {
-          ...shift,
-          start,
-          end,
-        };
-      } else {
-        // For other shifts, just return them as they are (no update needed)
-        return shift;
-      }
-    });
+  //     const updatedEvents = shifts.map((shift) => {
+  //       // Check if the current shift has the same id as the dragged event
+  //       if (shift.id === data.event.id) {
+  //         // Update the start and end times for the dragged event
+  //         return {
+  //           ...shift,
+  //           start,
+  //           end,
+  //         };
+  //       } else {
+  //         // For other shifts, just return them as they are (no update needed)
+  //         return shift;
+  //       }
+  //     });
 
-    console.log("UpdatedEvents:", updatedEvents);
-    setShifts(updatedEvents);
-  };
+  //     console.log("UpdatedEvents:", updatedEvents);
+  //     setShifts(updatedEvents);
+  //   };
 
-  const onEventResize = (data) => {
-    const { start, end } = data;
-    const updatedEvents = [
-      {
-        ...shifts[0],
-        start,
-        end,
-      },
-      ...shifts.slice(1),
-    ];
-    setShifts(updatedEvents);
-  };
+  //   const onEventResize = (data) => {
+  //     const { start, end } = data;
+  //     const updatedEvents = [
+  //       {
+  //         ...shifts[0],
+  //         start,
+  //         end,
+  //       },
+  //       ...shifts.slice(1),
+  //     ];
+  //     setShifts(updatedEvents);
+  //   };
 
   // Called when you select a date.
   // This method is used for keeping track which day was selected
@@ -424,7 +423,7 @@ const MyCalendar = () => {
   // triggered when slot/s from day/week view is selected
   const onSelectSlot = async ({ id, start, end }) => {
     // if user is not approved, show warning
-    if (role == "Employee" && isApproved == "Not Approved") {
+    if (role === "Employee" && isApproved === "Not Approved") {
       // show a warning message
       console.log(isApproved);
       console.log("Not approved... showing warning now");
@@ -432,7 +431,7 @@ const MyCalendar = () => {
       setShowToast(true);
       return;
     }
-    if (currentView == "day" || currentView == "week") {
+    if (currentView === "day" || currentView === "week") {
       //TODO title should be the person's name
       setStart(start);
       setEnd(end);
@@ -462,7 +461,6 @@ const MyCalendar = () => {
     userDocID,
     title,
   }) => {
-    //TODO this ID is returning undefined
     // 1. Create new shift as a manager > change the employee straight away
     console.log("(onSelectEvent)ID: " + id);
     console.log("(onSelectEvent)UserID: " + UserID);
@@ -500,15 +498,11 @@ const MyCalendar = () => {
       // Reference to this user's shifts subcollection
       const shiftsCollectionRef = collection(userRef, "shifts");
 
-      if (title != "") {
+      if (title !== "") {
         newShift.title = title;
       }
 
       const batch = writeBatch(db);
-      // Add new document to the shifts subcollection and add the item in the calendar (client side)
-
-      //   setNewShiftDocID(newRef.id); //TODO I think this newShiftDocID is redundant
-      //   newShift.id = newRef.id;
 
       console.log("(createShift) isNewValue:", isNewValue, isUpdating);
       if (isNewValue && isUpdating) {
@@ -540,7 +534,7 @@ const MyCalendar = () => {
         console.log("newArray:", newArray);
       } else {
         console.log("(createShift) role:", role);
-        if (role == "Manager") {
+        if (role === "Manager" && selectedUserID !== "" && isNewValue) {
           console.log("(createShift) selectedUserID:", selectedUserID);
           newShift.UserID = selectedUserID;
         }
@@ -571,27 +565,11 @@ const MyCalendar = () => {
       }
       setLoading(true);
       handleClose();
-      console.log("1");
-      // Reference to this user's document
-      const userRef = doc(db, "users", currentUserDocID);
-      console.log("2");
-
-      console.log("updatedShift.id:", updatedShift.id);
-
-      // Reference to this user's shifts subcollection
-      const shiftsCollectionRef = doc(
-        collection(userRef, "shifts"),
-        updatedShift.id
-      );
 
       console.log("updatedShift.userDocID", updatedShift.userDocID);
       console.log("selectedValue:", selectedUserDocID);
       console.log("isNewValue:", isNewValue);
       // Compare if there's a change in the selected employee for the shift
-      //   if (
-      //     updatedShift.userDocID !== selectedValue &&
-      //     updatedShift.UserID != ""
-      //   ) {
       if (isNewValue) {
         console.log(
           "Should be same as oldID --> updatedShift.id:",
@@ -607,7 +585,6 @@ const MyCalendar = () => {
         // setprvsSelectedValue(selectedValue);
 
         // make a new document using the new userid
-        console.log("DATA INCOMING");
         console.log(updatedShift);
         updatedShift.isVisible = true; // Set isVisible back to true as it was set to false to 'delete' the previous document
         updatedShift.UserID = selectedUserID;
@@ -630,9 +607,13 @@ const MyCalendar = () => {
         setLoading(false);
         setIsNewValue(false);
       } else {
+        const userRef = doc(db, "users", selectedUserDocID);
+
+        // Reference to this user's shifts subcollection
+        const ref = doc(collection(userRef, "shifts"), updatedShift.id);
         // Update the shift in Firestore
         setLoading(true);
-        await updateDoc(shiftsCollectionRef, updatedShift);
+        await updateDoc(ref, updatedShift);
         setLoading(false);
         const newArray = shifts.filter((shift) => shift.id !== updatedShift.id); // filter out the shift that is getting updated
         newArray.push(updatedShift); // add the shift that was updated into the new array
@@ -684,6 +665,15 @@ const MyCalendar = () => {
     handleClose();
     setLoading(true);
     shift.isConfirmed = true;
+
+    if (isNewValue) {
+      setToastMessage(
+        "Unable to confirm shift due to change in employee. Please update the selected shift first before confirming."
+      );
+      setShowToast(true);
+      setLoading(false);
+      return;
+    }
 
     const shiftRef = doc(db, "users", shift.userDocID, "shifts", shift.id);
 

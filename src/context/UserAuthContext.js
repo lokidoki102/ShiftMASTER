@@ -324,6 +324,7 @@ export function UserAuthContextProvider({ children }) {
                             subcollectionRef,
                             where("UserID", "==", userID),
                             where("isConfirmed", "==", true),
+                            where("isVisible", "==", true),
                             orderBy("start", "desc")
                         );
                     })
