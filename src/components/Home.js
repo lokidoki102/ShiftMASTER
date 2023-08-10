@@ -21,7 +21,6 @@ const Home = () => {
 
     useEffect(() => {
         try {
-           
             (async () => {
                 if (loggedIn !== undefined) {
                     if (loggedIn === true) {
