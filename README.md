@@ -54,5 +54,3 @@ https://shiftmaster-cabd2.web.app/
 
 *Final Milestone:*
 1. Poster: https://drive.google.com/file/d/1C3WGpOEJ0i3ARbvBIwuG7hLWCBcXi8KT/view?usp=sharing
-2. Video:
-3. Code (zip format):
